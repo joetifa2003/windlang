@@ -11,26 +11,20 @@ import (
 func main() {
 
 	input := `
-		let even = 0;
-		let odd = 0;
-		
-		for (let i = 0; i < 100000; i++) {
-			
-			if (i % 2 == 0) {
-				even = even + 1;
-			} else {
-				odd = odd + 1;
-			}
-
-		}
-
-		println(even);
-		println(odd);
+		;
 	`
 
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
 	program := parser.ParseProgram()
+
+	if len(parser.Errors) != 0 {
+		for _, err := range parser.Errors {
+			fmt.Printf("[ERROR] %s\n", err)
+		}
+
+		return
+	}
 
 	env := object.NewEnvironment()
 	evaluated := evaluator.Eval(program, env)

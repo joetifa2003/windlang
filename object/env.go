@@ -27,12 +27,20 @@ func (e *Environment) Get(name string) (Object, bool) {
 	return obj, ok
 }
 
+// For assigning
 func (e *Environment) Set(name string, val Object) Object {
 	_, ok := e.store[name]
 	if !ok && e.outer != nil {
 		return e.outer.Set(name, val)
 	}
 
+	e.store[name] = val
+
+	return val
+}
+
+// For local scope variables
+func (e *Environment) Let(name string, val Object) Object {
 	e.store[name] = val
 
 	return val

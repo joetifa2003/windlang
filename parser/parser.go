@@ -114,7 +114,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 	for p.curToken.Type != token.EOF {
 		statement := p.parseStatement()
 
-		program.Statements = append(program.Statements, statement)
+		if statement != nil {
+			program.Statements = append(program.Statements, statement)
+		}
 	}
 
 	return &program
@@ -128,6 +130,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	case token.FOR:
 		return p.parseForStatement()
+	case token.LBRACE:
+		return p.parseBlockStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -235,6 +239,8 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.getPrefixParseFn(p.curToken.Type)
 	if prefix == nil {
+		msg := fmt.Sprintf("cannot parse %s as an expression", p.curToken.Literal)
+		p.Errors = append(p.Errors, msg)
 		return nil
 	}
 
@@ -349,13 +355,13 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		return nil
 	}
 
-	thenStatement := p.parseBlockStatement()
+	thenStatement := p.parseStatement()
 	expression.ThenBranch = thenStatement
 
 	if p.currentTokenIs(token.ELSE) {
 		p.nextToken()
 
-		elseStatement := p.parseBlockStatement()
+		elseStatement := p.parseStatement()
 		expression.ElseBranch = elseStatement
 	}
 

@@ -18,7 +18,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalProgram(node.Statements, env)
 
 	case *ast.BlockStatement:
-		return evalBlockStatement(node, env)
+		return evalBlockStatement(node, object.NewEnclosedEnvironment(env))
 
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression, env)
@@ -29,7 +29,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 
-		env.Set(node.Name.Value, val)
+		env.Let(node.Name.Value, val)
 
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env)
@@ -148,7 +148,7 @@ func extendFunctionEnv(
 	env := object.NewEnclosedEnvironment(fn.Env)
 
 	for paramIdx, param := range fn.Parameters {
-		env.Set(param.Value, args[paramIdx])
+		env.Let(param.Value, args[paramIdx])
 	}
 
 	return env
@@ -167,6 +167,7 @@ func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Ob
 
 	for _, e := range exps {
 		evaluated := Eval(e, env)
+
 		if isError(evaluated) {
 			return []object.Object{evaluated}
 		}
@@ -201,12 +202,8 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 	for _, statement := range block.Statements {
 		result = Eval(statement, env)
 
-		if result != nil {
-			rt := result.Type()
-
-			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
-				return result
-			}
+		if isReturn(result) {
+			return result
 		}
 	}
 
@@ -232,12 +229,8 @@ func evalForStatement(node *ast.ForStatement, env *object.Environment) object.Ob
 		}
 
 		result := Eval(node.Body, enclosedEnv)
-		if result != nil {
-			rt := result.Type()
-
-			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
-				return result
-			}
+		if isReturn(result) {
+			return result
 		}
 
 		increment := Eval(node.Increment, enclosedEnv)
@@ -428,6 +421,16 @@ func boolToBoolObject(value bool) *object.Boolean {
 func isError(obj object.Object) bool {
 	if obj != nil {
 		return obj.Type() == object.ERROR_OBJ
+	}
+
+	return false
+}
+
+func isReturn(obj object.Object) bool {
+	rt := obj.Type()
+
+	if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
+		return true
 	}
 
 	return false
