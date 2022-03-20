@@ -30,6 +30,8 @@ var builtins = map[string]*object.Builtin{
 					fmt.Println(arg.Value)
 				case *object.Integer:
 					fmt.Println(arg.Value)
+				case *object.Boolean:
+					fmt.Println(arg.Value)
 				}
 			}
 

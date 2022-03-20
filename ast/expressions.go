@@ -79,8 +79,8 @@ type IfExpression struct {
 
 	Token      token.Token // The 'if' token
 	Condition  Expression
-	ThenBranch *BlockStatement
-	ElseBranch *BlockStatement
+	ThenBranch Statement
+	ElseBranch Statement
 }
 
 func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
