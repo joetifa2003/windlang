@@ -11,7 +11,7 @@ import (
 func main() {
 
 	input := `
-		;
+		
 	`
 
 	lexer := lexer.New(input)
@@ -28,5 +28,8 @@ func main() {
 
 	env := object.NewEnvironment()
 	evaluated := evaluator.Eval(program, env)
-	fmt.Println(evaluated.Inspect())
+
+	if evaluated != nil {
+		fmt.Printf("%s\n", evaluated.Inspect())
+	}
 }
