@@ -263,32 +263,10 @@ func TestIfExpression(t *testing.T) {
 			program.Statements[0])
 	}
 
-	exp, ok := stmt.Expression.(*ast.IfExpression)
+	_, ok = stmt.Expression.(*ast.IfExpression)
 	if !ok {
 		t.Fatalf("stmt.Expression is not ast.IfExpression. got=%T",
 			stmt.Expression)
-	}
-
-	if len(exp.ThenBranch.Statements) != 1 {
-		t.Errorf("consequence is not 1 statements. got=%d\n",
-			len(exp.ThenBranch.Statements))
-	}
-
-	_, ok = exp.ThenBranch.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T",
-			exp.ThenBranch.Statements[0])
-	}
-
-	if len(exp.ElseBranch.Statements) != 1 {
-		t.Errorf("consequence is not 1 statements. got=%d\n",
-			len(exp.ThenBranch.Statements))
-	}
-
-	_, ok = exp.ElseBranch.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T",
-			exp.ThenBranch.Statements[0])
 	}
 }
 

@@ -132,6 +132,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseForStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement()
+	case token.INCLUDE:
+		return p.parseIncludeStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -234,6 +236,22 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return &block
+}
+
+func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
+	stmt := ast.IncludeStatement{Token: p.curToken}
+
+	p.nextToken()
+
+	stmt.Path = p.curToken.Literal
+
+	p.nextToken()
+
+	if !p.expectCurrent(token.SEMICOLON) {
+		return nil
+	}
+
+	return &stmt
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

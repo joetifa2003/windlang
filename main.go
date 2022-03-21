@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"wind-vm-go/evaluator"
 	"wind-vm-go/lexer"
 	"wind-vm-go/object"
@@ -9,11 +10,15 @@ import (
 )
 
 func main() {
+	fileName := "main.wind"
 
-	input := `
-		
-	`
+	file, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		fmt.Println("Could not read file:", err)
+		return
+	}
 
+	input := string(file)
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
 	program := parser.ParseProgram()
@@ -26,7 +31,9 @@ func main() {
 		return
 	}
 
-	env := object.NewEnvironment()
+	envManager := object.NewEnvironmentManager()
+	env, _ := envManager.Get(fileName)
+	evaluator := evaluator.New(envManager)
 	evaluated := evaluator.Eval(program, env)
 
 	if evaluated != nil {

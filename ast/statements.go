@@ -120,3 +120,21 @@ func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
 func (fs *ForStatement) String() string {
 	return ""
 }
+
+type IncludeStatement struct {
+	Statement
+
+	Token token.Token // the 'include' token
+	Path  string
+}
+
+func (is *IncludeStatement) TokenLiteral() string { return is.Token.Literal }
+func (is *IncludeStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(is.TokenLiteral() + " ")
+	out.WriteString(is.Path)
+	out.WriteString(";")
+
+	return out.String()
+}

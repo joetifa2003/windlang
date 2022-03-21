@@ -7,6 +7,8 @@ import (
 	"wind-vm-go/parser"
 )
 
+const fileName = "test.wind"
+
 func TestEvalIntegerExpression(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -315,9 +317,12 @@ func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	env := object.NewEnvironment()
 
-	return Eval(program, env)
+	envManager := object.NewEnvironmentManager()
+	env := envManager.Get(fileName)
+	evaluator := New(envManager)
+
+	return evaluator.Eval(program, env)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {

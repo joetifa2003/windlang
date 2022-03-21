@@ -31,6 +31,8 @@ func isKeyword(ident string) (TokenType, bool) {
 		return RETURN, true
 	case "for":
 		return FOR, true
+	case "include":
+		return INCLUDE, true
 	}
 
 	return IDENT, false

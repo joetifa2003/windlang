@@ -43,6 +43,7 @@ const (
 	ELSE
 	RETURN
 	FOR
+	INCLUDE
 )
 
 func (t *TokenType) String() string {
@@ -109,6 +110,8 @@ func (t *TokenType) String() string {
 		return "++"
 	case MINUSMINUS:
 		return "--"
+	case INCLUDE:
+		return "INCLUDE"
 	default:
 		return "UNKNOWN"
 	}
