@@ -1,6 +1,0 @@
-// greeter.wind
-let msg = "Hello, world!";
-
-let greet = fn() {
-    println(msg)
-};

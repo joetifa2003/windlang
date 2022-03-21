@@ -17,7 +17,6 @@ var (
 
 type Evaluator struct {
 	envManager *object.EnvironmentManager
-	includes   []*object.Environment
 }
 
 func New(envManager *object.EnvironmentManager) *Evaluator {
@@ -145,6 +144,9 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 func (e *Evaluator) applyFunction(fn object.Object, args []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
+		if len(args) != len(fn.Parameters) {
+			return newError("expected %d arg(s) got %d", len(fn.Parameters), len(args))
+		}
 		extendedEnv := e.extendFunctionEnv(fn, args)
 		evaluated := e.Eval(fn.Body, extendedEnv)
 		return unwrapReturnValue(evaluated)
@@ -270,11 +272,10 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *object
 		lexer := lexer.New(input)
 		parser := parser.New(lexer)
 		program := parser.ParseProgram()
-		evaluator := New(e.envManager)
-		evaluator.Eval(program, fileEnv)
+		e.Eval(program, fileEnv)
 	}
 
-	e.includes = append(e.includes, fileEnv)
+	env.Includes = append(env.Includes, fileEnv)
 
 	return NULL
 }
@@ -422,12 +423,6 @@ func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *object.Environme
 func (e *Evaluator) evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 	if val, ok := env.Get(node.Value); ok {
 		return val
-	}
-
-	for _, include := range e.includes {
-		if val, ok := include.Get(node.Value); ok {
-			return val
-		}
 	}
 
 	if builtin, ok := builtins[node.Value]; ok {
