@@ -319,7 +319,7 @@ func testEval(input string) object.Object {
 	program := p.ParseProgram()
 
 	envManager := object.NewEnvironmentManager()
-	env := envManager.Get(fileName)
+	env, _ := envManager.Get(fileName)
 	evaluator := New(envManager)
 
 	return evaluator.Eval(program, env)

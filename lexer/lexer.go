@@ -74,7 +74,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 
 			// Skip comment
-			for l.peekChar() != '\n' && l.peekChar() != 0 {
+			for l.ch != '\n' && l.ch != 0 {
 				l.readChar()
 			}
 
@@ -83,9 +83,21 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.SLASH, l.ch)
 		}
 	case '<':
-		tok = newToken(token.LT, l.ch)
+		if l.peekChar() == '=' {
+			l.readChar()
+
+			tok = token.Token{Type: token.LT_EQ, Literal: "<="}
+		} else {
+			tok = newToken(token.LT, l.ch)
+		}
 	case '>':
-		tok = newToken(token.GT, l.ch)
+		if l.peekChar() == '=' {
+			l.readChar()
+
+			tok = token.Token{Type: token.GT_EQ, Literal: ">="}
+		} else {
+			tok = newToken(token.GT, l.ch)
+		}
 	case '{':
 		tok = newToken(token.LBRACE, l.ch)
 	case '}':

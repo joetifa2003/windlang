@@ -345,8 +345,12 @@ func (e *Evaluator) evalIntegerInfixExpression(operator string, left, right obje
 	switch operator {
 	case "<":
 		return boolToBoolObject(leftVal < rightVal)
+	case "<=":
+		return boolToBoolObject(leftVal <= rightVal)
 	case ">":
 		return boolToBoolObject(leftVal > rightVal)
+	case ">=":
+		return boolToBoolObject(leftVal >= rightVal)
 	case "==":
 		return boolToBoolObject(leftVal == rightVal)
 	case "!=":

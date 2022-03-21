@@ -88,7 +88,7 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 
 func (p *Parser) getInfixParseFn(tokenType token.TokenType) infixParseFn {
 	switch tokenType {
-	case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.EQ, token.NOT_EQ, token.LT, token.GT, token.MODULO:
+	case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.EQ, token.NOT_EQ, token.LT, token.LT_EQ, token.GT, token.GT_EQ, token.MODULO:
 		return p.parseInfixExpression
 	case token.LPAREN:
 		return p.parseCallExpression
