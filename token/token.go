@@ -33,6 +33,8 @@ func isKeyword(ident string) (TokenType, bool) {
 		return FOR, true
 	case "include":
 		return INCLUDE, true
+	case "while":
+		return WHILE, true
 	}
 
 	return IDENT, false

@@ -10,6 +10,7 @@ const (
 	IDENT // add, foobar, x, y, ...
 	INT   // 1343456
 	STRING
+	FLOAT
 
 	// Operators
 	ASSIGN
@@ -23,6 +24,8 @@ const (
 	GT     // >
 	LT_EQ  // <=
 	GT_EQ  // >=
+	AND    // &&
+	OR     // ||
 	EQ     // ==
 	NOT_EQ // !=
 	PLUSPLUS
@@ -46,6 +49,7 @@ const (
 	RETURN
 	FOR
 	INCLUDE
+	WHILE
 )
 
 func (t *TokenType) String() string {
@@ -114,6 +118,10 @@ func (t *TokenType) String() string {
 		return "--"
 	case INCLUDE:
 		return "INCLUDE"
+	case WHILE:
+		return "WHILE"
+	case FLOAT:
+		return "FLOAT"
 	default:
 		return "UNKNOWN"
 	}

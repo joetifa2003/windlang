@@ -55,12 +55,18 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.ForStatement:
 		return e.evalForStatement(node, env)
 
+	case *ast.WhileStatement:
+		return e.evalWhileStatement(node, env)
+
 	case *ast.IncludeStatement:
 		return e.evalIncludeStatement(node, env)
 
 	// Expressions
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+
+	case *ast.FloatLiteral:
+		return &object.Float{Value: node.Value}
 
 	case *ast.Boolean:
 		return boolToBoolObject(node.Value)
@@ -261,6 +267,26 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *object.Environ
 	return NULL
 }
 
+func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *object.Environment) object.Object {
+	for {
+		condition := e.Eval(node.Condition, env)
+		if isError(condition) {
+			return condition
+		}
+
+		if !isTruthy(condition) {
+			break
+		}
+
+		result := e.Eval(node.Body, env)
+		if isReturn(result) {
+			return result
+		}
+	}
+
+	return NULL
+}
+
 func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *object.Environment) object.Object {
 
 	path := node.Path
@@ -293,17 +319,7 @@ func (e *Evaluator) evalPrefixExpression(operator string, right object.Object) o
 }
 
 func (e *Evaluator) evalBangOperatorExpression(right object.Object) object.Object {
-	switch right {
-	case TRUE:
-		return FALSE
-	case FALSE:
-		return TRUE
-	case NULL:
-		return TRUE
-
-	default:
-		return FALSE
-	}
+	return boolToBoolObject(!isTruthy(right))
 }
 
 func (e *Evaluator) evalMinusPrefixOperatorExpression(right object.Object) object.Object {
@@ -332,6 +348,12 @@ func (e *Evaluator) evalInfixExpression(operator string, left, right object.Obje
 
 	case operator == "!=":
 		return boolToBoolObject(left != right)
+
+	case operator == "&&":
+		return boolToBoolObject(isTruthy(left) && isTruthy(right))
+
+	case operator == "&&":
+		return boolToBoolObject(isTruthy(left) || isTruthy(right))
 
 	default:
 		return newError("unknown operator: %s %s %s",

@@ -17,6 +17,8 @@ const (
 	_ int = iota
 	LOWEST
 	ASSIGN      // =
+	OR          // ||
+	AND         // &&
 	EQUALS      // ==
 	LESSGREATER // > or <
 	SUM         // +
@@ -58,6 +60,10 @@ func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 		return CALL
 	case token.PLUSPLUS, token.MINUSMINUS:
 		return POSTFIX
+	case token.AND:
+		return AND
+	case token.OR:
+		return OR
 	}
 
 	return LOWEST
@@ -69,6 +75,8 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 		return p.parseIdentifier
 	case token.INT:
 		return p.parseIntegerLiteral
+	case token.FLOAT:
+		return p.parseFloatLiteral
 	case token.BANG, token.MINUS:
 		return p.parsePrefixExpression
 	case token.TRUE, token.FALSE:
@@ -88,7 +96,7 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 
 func (p *Parser) getInfixParseFn(tokenType token.TokenType) infixParseFn {
 	switch tokenType {
-	case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.EQ, token.NOT_EQ, token.LT, token.LT_EQ, token.GT, token.GT_EQ, token.MODULO:
+	case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.EQ, token.NOT_EQ, token.LT, token.LT_EQ, token.GT, token.GT_EQ, token.MODULO, token.AND, token.OR:
 		return p.parseInfixExpression
 	case token.LPAREN:
 		return p.parseCallExpression
@@ -134,6 +142,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseBlockStatement()
 	case token.INCLUDE:
 		return p.parseIncludeStatement()
+	case token.WHILE:
+		return p.parseWhileStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -254,6 +264,26 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 	return &stmt
 }
 
+func (p *Parser) parseWhileStatement() *ast.WhileStatement {
+	stmt := ast.WhileStatement{Token: p.curToken}
+
+	p.nextToken()
+
+	if !p.expectCurrent(token.LPAREN) {
+		return nil
+	}
+
+	stmt.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectCurrent(token.RPAREN) {
+		return nil
+	}
+
+	stmt.Body = p.parseBlockStatement()
+
+	return &stmt
+}
+
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.getPrefixParseFn(p.curToken.Type)
 	if prefix == nil {
@@ -315,6 +345,23 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	p.nextToken()
 
 	return &integer
+}
+
+func (p *Parser) parseFloatLiteral() ast.Expression {
+	float := ast.FloatLiteral{Token: p.curToken}
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as float", p.curToken.Literal)
+		p.Errors = append(p.Errors, msg)
+		return nil
+	}
+
+	float.Value = value
+
+	p.nextToken()
+
+	return &float
 }
 
 func (p *Parser) parseStringLiteral() ast.Expression {

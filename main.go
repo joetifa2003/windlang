@@ -36,7 +36,8 @@ func main() {
 	evaluator := evaluator.New(envManager)
 	evaluated := evaluator.Eval(program, env)
 
-	if evaluated != nil {
-		fmt.Printf("%s\n", evaluated.Inspect())
+	switch evaluated.Type() {
+	case object.ERROR_OBJ:
+		fmt.Println(evaluated.Inspect())
 	}
 }

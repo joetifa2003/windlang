@@ -138,3 +138,16 @@ func (is *IncludeStatement) String() string {
 
 	return out.String()
 }
+
+type WhileStatement struct {
+	Statement
+
+	Token     token.Token
+	Condition Expression
+	Body      Statement
+}
+
+func (ws *WhileStatement) TokenLiteral() string { return ws.Token.Literal }
+func (ws *WhileStatement) String() string {
+	return ""
+}

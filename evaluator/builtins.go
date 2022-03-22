@@ -24,16 +24,24 @@ var builtins = map[string]*object.Builtin{
 	},
 	"println": {
 		Fn: func(args ...object.Object) object.Object {
+			argsString := []interface{}{}
 			for _, arg := range args {
-				switch arg := arg.(type) {
-				case *object.String:
-					fmt.Println(arg.Value)
-				case *object.Integer:
-					fmt.Println(arg.Value)
-				case *object.Boolean:
-					fmt.Println(arg.Value)
-				}
+				argsString = append(argsString, arg.Inspect())
 			}
+
+			fmt.Println(argsString...)
+
+			return NULL
+		},
+	},
+	"print": {
+		Fn: func(args ...object.Object) object.Object {
+			argsString := []interface{}{}
+			for _, arg := range args {
+				argsString = append(argsString, arg.Inspect())
+			}
+
+			fmt.Print(argsString...)
 
 			return NULL
 		},

@@ -41,6 +41,14 @@ func (l *Lexer) NextToken() token.Token {
 		} else {
 			tok = newToken(token.ASSIGN, l.ch)
 		}
+	case '&':
+		if l.peekChar() == '&' {
+			l.readChar()
+
+			tok = token.Token{Type: token.AND, Literal: "&&"}
+		} else {
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch) + string(l.peekChar())}
+		}
 	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
 	case '(':
@@ -115,8 +123,7 @@ func (l *Lexer) NextToken() token.Token {
 
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Literal = l.readNumber()
-			tok.Type = token.INT
+			tok.Literal, tok.Type = l.readNumber()
 
 			return tok
 		} else {
@@ -153,14 +160,23 @@ func (l *Lexer) readString() string {
 	return string(l.input[position:l.position])
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readNumber() (string, token.TokenType) {
 	position := l.position
 
-	for isDigit(l.ch) {
+	dotCount := 0
+	for isDigit(l.ch) || l.ch == '.' {
 		l.readChar()
+
+		if l.ch == '.' {
+			dotCount++
+		}
 	}
 
-	return string(l.input[position:l.position])
+	if dotCount == 1 {
+		return string(l.input[position:l.position]), token.FLOAT
+	} else {
+		return string(l.input[position:l.position]), token.INT
+	}
 }
 
 func (l *Lexer) skipWhitespace() {

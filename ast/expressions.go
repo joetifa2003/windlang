@@ -26,6 +26,16 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.TokenLiteral() }
 
+type FloatLiteral struct {
+	Expression
+
+	Token token.Token
+	Value float64
+}
+
+func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FloatLiteral) String() string       { return fl.TokenLiteral() }
+
 type Boolean struct {
 	Expression
 
