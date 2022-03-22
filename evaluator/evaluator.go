@@ -135,12 +135,10 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 
-		_, ok := env.Get(node.Name.Value)
+		_, ok := env.Set(node.Name.Value, val)
 		if !ok {
 			return newError("identifier not found: " + node.Name.Value)
 		}
-
-		env.Set(node.Name.Value, val)
 
 		return val
 	}
@@ -244,24 +242,53 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *object.Environ
 		return init
 	}
 
-	for {
-		condition := e.Eval(node.Condition, enclosedEnv)
-		if isError(condition) {
-			return condition
+	switch body := node.Body.(type) {
+	case *ast.BlockStatement: // to optimize for block statements
+		bodyEnv := object.NewEnclosedEnvironment(enclosedEnv)
+
+		for {
+			condition := e.Eval(node.Condition, enclosedEnv)
+			if isError(condition) {
+				return condition
+			}
+
+			if !isTruthy(condition) {
+				break
+			}
+
+			result := e.evalBlockStatement(body, bodyEnv)
+			if isReturn(result) {
+				return result
+			}
+
+			bodyEnv.ClearStore()
+
+			increment := e.Eval(node.Increment, enclosedEnv)
+			if isError(increment) {
+				return increment
+			}
 		}
 
-		if !isTruthy(condition) {
-			break
-		}
+	default:
+		for {
+			condition := e.Eval(node.Condition, enclosedEnv)
+			if isError(condition) {
+				return condition
+			}
 
-		result := e.Eval(node.Body, enclosedEnv)
-		if isReturn(result) {
-			return result
-		}
+			if !isTruthy(condition) {
+				break
+			}
 
-		increment := e.Eval(node.Increment, enclosedEnv)
-		if isError(increment) {
-			return increment
+			result := e.Eval(body, enclosedEnv)
+			if isReturn(result) {
+				return result
+			}
+
+			increment := e.Eval(node.Increment, enclosedEnv)
+			if isError(increment) {
+				return increment
+			}
 		}
 	}
 
@@ -460,9 +487,11 @@ func (e *Evaluator) evalPostfixExpression(operator string, left *ast.Identifier,
 	case object.INTEGER_OBJ:
 		switch operator {
 		case "++":
-			newValue := value.(*object.Integer).Value + 1
-			env.Set(left.Value, &object.Integer{Value: newValue})
-			return &object.Integer{Value: newValue}
+			intObj := value.(*object.Integer)
+			intObj.Value++
+
+			env.Set(left.Value, intObj)
+			return intObj
 
 		default:
 			return newError("unknown operator: %s%s", operator, value.Inspect())

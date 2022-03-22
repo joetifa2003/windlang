@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"math"
 	"wind-vm-go/object"
 )
 
@@ -17,8 +18,7 @@ var builtins = map[string]*object.Builtin{
 			case *object.String:
 				return &object.Integer{Value: int64(len(arg.Value))}
 			default:
-				return newError("argument to `len` not supported, got %s",
-					args[0].Type())
+				return newError("argument to `len` not supported)")
 			}
 		},
 	},
@@ -58,8 +58,22 @@ var builtins = map[string]*object.Builtin{
 				return &object.String{Value: fmt.Sprintf("%d", arg.Value)}
 			}
 
-			return newError("argument to `string` not supported, got %s",
-				args[0].Type())
+			return newError("argument to `string` not supported")
+		},
+	},
+	"sqrt": {
+		Fn: func(args ...object.Object) object.Object {
+			switch arg := args[0].(type) {
+			case *object.Integer:
+				value := math.Sqrt(float64(arg.Value))
+
+				return &object.Float{Value: value}
+
+			case *object.Float:
+				return &object.Float{Value: math.Sqrt(arg.Value)}
+			}
+
+			return newError("argument to `sqrt` not supported")
 		},
 	},
 }
