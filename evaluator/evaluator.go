@@ -352,6 +352,12 @@ func (e *Evaluator) evalInfixExpression(operator string, left, right object.Obje
 
 		return e.evalFloatInfixExpression(operator, leftVal, float64(rightVal))
 
+	case left.Type() == object.INTEGER_OBJ && right.Type() == object.FLOAT_OBJ:
+		leftVal := left.(*object.Integer).Value
+		rightVal := right.(*object.Float).Value
+
+		return e.evalFloatInfixExpression(operator, float64(leftVal), rightVal)
+
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return e.evalStringInfixExpression(operator, left, right)
 
