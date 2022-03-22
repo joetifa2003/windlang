@@ -7,17 +7,18 @@ import (
 	"wind-vm-go/ast"
 )
 
-type ObjectType string
+type ObjectType int
 
 const (
-	INTEGER_OBJ      ObjectType = "INTEGER"
-	BOOLEAN_OBJ      ObjectType = "BOOLEAN"
-	NULL_OBJ         ObjectType = "NULL"
-	RETURN_VALUE_OBJ ObjectType = "RETURN_VALUE"
-	ERROR_OBJ        ObjectType = "ERROR"
-	FUNCTION_OBJ     ObjectType = "FUNCTION"
-	STRING_OBJ       ObjectType = "STRING"
-	BUILTIN_OBJ      ObjectType = "BUILTIN"
+	INTEGER_OBJ ObjectType = iota
+	FLOAT_OBJ
+	BOOLEAN_OBJ
+	NULL_OBJ
+	RETURN_VALUE_OBJ
+	ERROR_OBJ
+	FUNCTION_OBJ
+	STRING_OBJ
+	BUILTIN_OBJ
 )
 
 type Object interface {
@@ -36,7 +37,7 @@ type Float struct {
 	Value float64
 }
 
-func (f Float) Type() ObjectType { return INTEGER_OBJ }
+func (f Float) Type() ObjectType { return FLOAT_OBJ }
 func (f Float) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
 
 type Boolean struct {
