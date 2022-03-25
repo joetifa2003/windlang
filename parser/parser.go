@@ -398,7 +398,7 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 	exp := p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.RPAREN) {
+	if !p.expectCurrent(token.RPAREN) {
 		return nil
 	}
 
