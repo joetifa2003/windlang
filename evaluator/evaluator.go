@@ -92,7 +92,7 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 
 		right := e.Eval(node.Right, env)
 		if isError(right) {
-			return left
+			return right
 		}
 
 		return e.evalInfixExpression(node.Operator, left, right)
@@ -159,6 +159,9 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return &object.Array{Value: objects}
+
+	case *ast.IndexExpression:
+		return e.evalIndexExpression(node, env)
 	}
 
 	return NULL
@@ -420,7 +423,7 @@ func (e *Evaluator) evalInfixExpression(operator string, left, right object.Obje
 	case operator == "&&":
 		return boolToBoolObject(isTruthy(left) && isTruthy(right))
 
-	case operator == "&&":
+	case operator == "||":
 		return boolToBoolObject(isTruthy(left) || isTruthy(right))
 
 	default:
@@ -549,6 +552,51 @@ func (e *Evaluator) evalIdentifier(node *ast.Identifier, env *object.Environment
 	}
 
 	return newError("identifier not found: " + node.Value)
+}
+
+func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *object.Environment) object.Object {
+	left := e.Eval(node.Left, env)
+	if isError(left) {
+		return left
+	}
+
+	index := e.Eval(node.Index, env)
+	if isError(index) {
+		return index
+	}
+
+	switch left.Type() {
+	case object.ARRAY_OBJ:
+		return e.evalArrayIndexExpression(node, left, index)
+	case object.STRING_OBJ:
+		return e.evalStringIndexExpression(node, left, index)
+	default:
+		return newError("index operator not supported: %s", left.Inspect())
+	}
+}
+
+func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array, index object.Object) object.Object {
+	arrayObj := array.(*object.Array)
+	idx := index.(*object.Integer).Value
+	max := int64(len(arrayObj.Value) - 1)
+
+	if idx < 0 || idx > max {
+		return NULL
+	}
+
+	return arrayObj.Value[idx]
+}
+
+func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, index object.Object) object.Object {
+	strObj := str.(*object.String)
+	idx := index.(*object.Integer).Value
+	max := int64(len(strObj.Value) - 1)
+
+	if idx < 0 || idx > max {
+		return NULL
+	}
+
+	return &object.String{Value: string([]rune(strObj.Value)[idx])}
 }
 
 func newError(format string, a ...interface{}) *object.Error {

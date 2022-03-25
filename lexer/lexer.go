@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"strings"
 	"wind-vm-go/token"
 )
 
@@ -46,6 +47,14 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 
 			tok = token.Token{Type: token.AND, Literal: "&&"}
+		} else {
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch) + string(l.peekChar())}
+		}
+	case '|':
+		if l.peekChar() == '|' {
+			l.readChar()
+
+			tok = token.Token{Type: token.OR, Literal: "||"}
 		} else {
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch) + string(l.peekChar())}
 		}
@@ -161,7 +170,7 @@ func (l *Lexer) readString() string {
 		}
 	}
 
-	return string(l.input[position:l.position])
+	return escapeCharacters(string(l.input[position:l.position]))
 }
 
 func (l *Lexer) readNumber() (string, token.TokenType) {
@@ -207,4 +216,16 @@ func isLetter(ch rune) bool {
 
 func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func escapeCharacters(str string) string {
+	str = strings.ReplaceAll(str, `\n`, "\n")
+	str = strings.ReplaceAll(str, `\t`, "\t")
+	str = strings.ReplaceAll(str, `\r`, "\r")
+	str = strings.ReplaceAll(str, `\b`, "\b")
+	str = strings.ReplaceAll(str, `\f`, "\f")
+	str = strings.ReplaceAll(str, `\a`, "\a")
+	str = strings.ReplaceAll(str, `\v`, "\v")
+
+	return str
 }

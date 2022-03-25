@@ -25,7 +25,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	POSTFIX     // x++ or x--
-	CALL        // myFunction(X)
+	HEIGHTS     // myFunction(X)
 )
 
 type Parser struct {
@@ -56,14 +56,14 @@ func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 		return SUM
 	case token.SLASH, token.ASTERISK, token.MODULO:
 		return PRODUCT
-	case token.LPAREN:
-		return CALL
 	case token.PLUSPLUS, token.MINUSMINUS:
 		return POSTFIX
 	case token.AND:
 		return AND
 	case token.OR:
 		return OR
+	case token.LPAREN, token.LBRACKET:
+		return HEIGHTS
 	}
 
 	return LOWEST
@@ -106,6 +106,8 @@ func (p *Parser) getInfixParseFn(tokenType token.TokenType) infixParseFn {
 		return p.parsePostfixExpression
 	case token.ASSIGN:
 		return p.parseAssignExpression
+	case token.LBRACKET:
+		return p.parseIndexExpression
 	}
 
 	return nil
@@ -554,6 +556,20 @@ func (p *Parser) parseAssignExpression(left ast.Expression) ast.Expression {
 	expression.Value = p.parseExpression(precedence)
 
 	return &expression
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := ast.IndexExpression{Token: p.curToken, Left: left}
+
+	p.nextToken()
+
+	exp.Index = p.parseExpression(LOWEST)
+
+	if !p.expectCurrent(token.RBRACKET) {
+		return nil
+	}
+
+	return &exp
 }
 
 func (p *Parser) curPrecedence() int {
