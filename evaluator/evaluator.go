@@ -145,6 +145,20 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return val
+
+	case *ast.ArrayLiteral:
+		objects := make([]object.Object, len(node.Value))
+
+		for index, expr := range node.Value {
+			object := e.Eval(expr, env)
+			if isError(object) {
+				return object
+			}
+
+			objects[index] = object
+		}
+
+		return &object.Array{Value: objects}
 	}
 
 	return NULL

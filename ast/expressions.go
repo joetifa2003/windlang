@@ -207,3 +207,24 @@ func (ae *AssignExpression) String() string {
 
 	return out.String()
 }
+
+type ArrayLiteral struct {
+	Expression
+
+	Token token.Token
+	Value []Expression
+}
+
+func (ae *ArrayLiteral) TokenLiteral() string { return ae.Token.Literal }
+func (a *ArrayLiteral) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+	for _, obj := range a.Value {
+		out.WriteString(obj.String())
+		out.WriteString(",")
+	}
+	out.WriteString("]")
+
+	return out.String()
+}

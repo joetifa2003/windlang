@@ -89,6 +89,8 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 		return p.parseFunctionLiteral
 	case token.STRING:
 		return p.parseStringLiteral
+	case token.LBRACKET:
+		return p.parseArrayLiteral
 	}
 
 	return nil
@@ -483,15 +485,25 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 
 	p.nextToken()
 
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseCallArguments(token.RPAREN)
 
 	return &exp
 }
 
-func (p *Parser) parseCallArguments() []ast.Expression {
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	exp := ast.ArrayLiteral{Token: p.curToken}
+
+	p.nextToken()
+
+	exp.Value = p.parseCallArguments(token.RBRACKET)
+
+	return &exp
+}
+
+func (p *Parser) parseCallArguments(endToken token.TokenType) []ast.Expression {
 	args := []ast.Expression{}
 
-	if p.currentTokenIs(token.RPAREN) {
+	if p.currentTokenIs(endToken) {
 		p.nextToken()
 		return args
 	}
@@ -503,7 +515,7 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 		args = append(args, p.parseExpression(LOWEST))
 	}
 
-	if !p.expectCurrent(token.RPAREN) {
+	if !p.expectCurrent(endToken) {
 		return nil
 	}
 
