@@ -1,5 +1,13 @@
 package object
 
+import "sync"
+
+var envPool = sync.Pool{
+	New: func() interface{} {
+		return &Environment{}
+	},
+}
+
 type Environment struct {
 	Store    map[string]Object
 	Outer    *Environment
@@ -11,7 +19,7 @@ func NewEnvironment() *Environment {
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
-	env := NewEnvironment()
+	env := envPool.Get().(*Environment)
 	env.Outer = outer
 
 	return env
@@ -87,4 +95,8 @@ func (e *Environment) ClearStore() {
 	for k := range e.Store {
 		delete(e.Store, k)
 	}
+}
+
+func (e *Environment) Dispose() {
+	envPool.Put(e)
 }

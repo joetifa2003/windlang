@@ -32,7 +32,11 @@ func (e *Evaluator) Eval(node ast.Node, env *object.Environment) object.Object {
 		return e.evalProgram(node.Statements, env)
 
 	case *ast.BlockStatement:
-		return e.evalBlockStatement(node, object.NewEnclosedEnvironment(env))
+		enclosed := object.NewEnclosedEnvironment(env)
+		obj := e.evalBlockStatement(node, enclosed)
+		enclosed.Dispose()
+
+		return obj
 
 	case *ast.ExpressionStatement:
 		return e.Eval(node.Expression, env)
@@ -154,6 +158,7 @@ func (e *Evaluator) applyFunction(fn object.Object, args []object.Object) object
 		}
 		extendedEnv := e.extendFunctionEnv(fn, args)
 		evaluated := e.Eval(fn.Body, extendedEnv)
+		extendedEnv.Dispose()
 		return unwrapReturnValue(evaluated)
 
 	case *object.Builtin:
@@ -269,6 +274,8 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *object.Environ
 			}
 		}
 
+		bodyEnv.Dispose()
+
 	default:
 		for {
 			condition := e.Eval(node.Condition, enclosedEnv)
@@ -291,6 +298,8 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *object.Environ
 			}
 		}
 	}
+
+	enclosedEnv.Dispose()
 
 	return NULL
 }
