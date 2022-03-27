@@ -1,4 +1,4 @@
-package object
+package evaluator
 
 import (
 	"bytes"
@@ -96,7 +96,7 @@ type String struct {
 func (s *String) Type() ObjectType { return STRING_OBJ }
 func (s *String) Inspect() string  { return s.Value }
 
-type BuiltinFunction func(args ...Object) Object
+type BuiltinFunction func(evaluator *Evaluator, args ...Object) Object
 
 type Builtin struct {
 	Fn BuiltinFunction

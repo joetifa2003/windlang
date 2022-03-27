@@ -3,7 +3,6 @@ package evaluator
 import (
 	"testing"
 	"wind-vm-go/lexer"
-	"wind-vm-go/object"
 	"wind-vm-go/parser"
 )
 
@@ -167,7 +166,7 @@ func TestErrorHandling(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		errObj, ok := evaluated.(*object.Error)
+		errObj, ok := evaluated.(*Error)
 
 		if !ok {
 			t.Errorf("no error object returned. got=%T(%+v)",
@@ -202,7 +201,7 @@ func TestLetStatements(t *testing.T) {
 func TestFunctionObject(t *testing.T) {
 	input := "fn(x) { x + 2; };"
 	evaluated := testEval(input)
-	fn, ok := evaluated.(*object.Function)
+	fn, ok := evaluated.(*Function)
 	if !ok {
 		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -256,7 +255,7 @@ func TestClosures(t *testing.T) {
 func TestStringLiteral(t *testing.T) {
 	input := `"Hello World!"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*String)
 	if !ok {
 		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -269,7 +268,7 @@ func TestStringLiteral(t *testing.T) {
 func TestStringConcatenation(t *testing.T) {
 	input := `"Hello" + " " + "World!"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*String)
 	if !ok {
 		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -298,7 +297,7 @@ func TestBuiltinFunctions(t *testing.T) {
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
 		case string:
-			errObj, ok := evaluated.(*object.Error)
+			errObj, ok := evaluated.(*Error)
 			if !ok {
 				t.Errorf("object is not Error. got=%T (%+v)",
 					evaluated, evaluated)
@@ -313,20 +312,20 @@ func TestBuiltinFunctions(t *testing.T) {
 	}
 }
 
-func testEval(input string) object.Object {
+func testEval(input string) Object {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	envManager := object.NewEnvironmentManager()
+	envManager := NewEnvironmentManager()
 	env, _ := envManager.Get(fileName)
 	evaluator := New(envManager)
 
 	return evaluator.Eval(program, env)
 }
 
-func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
-	result, ok := obj.(*object.Integer)
+func testIntegerObject(t *testing.T, obj Object, expected int64) bool {
+	result, ok := obj.(*Integer)
 	if !ok {
 		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
 		return false
@@ -341,8 +340,8 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	return true
 }
 
-func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
-	result, ok := obj.(*object.Boolean)
+func testBooleanObject(t *testing.T, obj Object, expected bool) bool {
+	result, ok := obj.(*Boolean)
 	if !ok {
 		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
 		return false
@@ -357,7 +356,7 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	return true
 }
 
-func testNullObject(t *testing.T, obj object.Object) bool {
+func testNullObject(t *testing.T, obj Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
 		return false

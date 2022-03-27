@@ -3,27 +3,28 @@ package evaluator
 import (
 	"fmt"
 	"math"
-	"wind-vm-go/object"
 )
 
-var builtins = map[string]*object.Builtin{
+var builtins = map[string]*Builtin{
 	"len": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 
 			switch arg := args[0].(type) {
-			case *object.String:
-				return &object.Integer{Value: int64(len(arg.Value))}
+			case *String:
+				return &Integer{Value: int64(len(arg.Value))}
+			case *Array:
+				return &Integer{Value: int64(len(arg.Value))}
 			default:
 				return newError("argument to `len` not supported)")
 			}
 		},
 	},
 	"println": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
 			argsString := []interface{}{}
 			for _, arg := range args {
 				argsString = append(argsString, arg.Inspect())
@@ -35,7 +36,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"print": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
 			argsString := []interface{}{}
 			for _, arg := range args {
 				argsString = append(argsString, arg.Inspect())
@@ -47,30 +48,30 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"string": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
 			}
 
 			switch arg := args[0].(type) {
-			case *object.Integer:
-				return &object.String{Value: fmt.Sprintf("%d", arg.Value)}
+			case *Integer:
+				return &String{Value: fmt.Sprintf("%d", arg.Value)}
 			}
 
 			return newError("argument to `string` not supported")
 		},
 	},
 	"sqrt": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
 			switch arg := args[0].(type) {
-			case *object.Integer:
+			case *Integer:
 				value := math.Sqrt(float64(arg.Value))
 
-				return &object.Float{Value: value}
+				return &Float{Value: value}
 
-			case *object.Float:
-				return &object.Float{Value: math.Sqrt(arg.Value)}
+			case *Float:
+				return &Float{Value: math.Sqrt(arg.Value)}
 			}
 
 			return newError("argument to `sqrt` not supported")

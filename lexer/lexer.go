@@ -95,7 +95,7 @@ func (l *Lexer) NextToken() token.Token {
 				l.readChar()
 			}
 
-			tok = l.NextToken()
+			return l.NextToken()
 		} else {
 			tok = newToken(token.SLASH, l.ch)
 		}

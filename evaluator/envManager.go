@@ -1,4 +1,4 @@
-package object
+package evaluator
 
 type EnvironmentManager struct {
 	environments map[string]*Environment // A map of environments for each file

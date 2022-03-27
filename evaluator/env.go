@@ -1,6 +1,8 @@
-package object
+package evaluator
 
-import "sync"
+import (
+	"sync"
+)
 
 var envPool = sync.Pool{
 	New: func() interface{} {
