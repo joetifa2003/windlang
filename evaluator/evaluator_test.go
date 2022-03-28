@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"testing"
 	"wind-vm-go/lexer"
 	"wind-vm-go/parser"
@@ -115,73 +116,6 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
-func TestErrorHandling(t *testing.T) {
-	tests := []struct {
-		input           string
-		expectedMessage string
-	}{
-		{
-			"5 + true;",
-			"type mismatch: INTEGER + BOOLEAN",
-		},
-		{
-			"5 + true; 5;",
-			"type mismatch: INTEGER + BOOLEAN",
-		},
-		{
-			"-true",
-			"unknown operator: -BOOLEAN",
-		},
-		{
-			"true + false;",
-			"unknown operator: BOOLEAN + BOOLEAN",
-		},
-		{
-			"5; true + false; 5",
-			"unknown operator: BOOLEAN + BOOLEAN",
-		},
-		{
-			"if (10 > 1) { true + false; }",
-			"unknown operator: BOOLEAN + BOOLEAN",
-		},
-		{`
-			if (10 > 1) {
-				if (10 > 1) {
-					return true + false;
-				}
-				return 1;
-			}
-		`,
-			"unknown operator: BOOLEAN + BOOLEAN",
-		},
-		{
-			"foobar",
-			"identifier not found: foobar",
-		},
-		{
-			`"Hello" - "World"`,
-			"unknown operator: STRING - STRING",
-		},
-	}
-
-	for _, tt := range tests {
-		evaluated := testEval(tt.input)
-		errObj, ok := evaluated.(*Error)
-
-		if !ok {
-			t.Errorf("no error object returned. got=%T(%+v)",
-				evaluated, evaluated)
-
-			continue
-		}
-
-		if errObj.Message != tt.expectedMessage {
-			t.Errorf("wrong error message. expected=%q, got=%q",
-				tt.expectedMessage, errObj.Message)
-		}
-	}
-}
-
 func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -235,6 +169,7 @@ func TestFunctionApplication(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		fmt.Println(tt.input)
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
@@ -286,8 +221,6 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len("")`, 0},
 		{`len("four")`, 4},
 		{`len("hello world")`, 11},
-		{`len(1)`, "argument to `len` not supported, got INTEGER"},
-		{`len("one", "two")`, "wrong number of arguments. got=2, want=1"},
 	}
 
 	for _, tt := range tests {

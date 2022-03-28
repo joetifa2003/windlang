@@ -22,6 +22,8 @@ func NewEnvironment() *Environment {
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := envPool.Get().(*Environment)
+	env.ClearStore()
+	env.Includes = nil
 	env.Outer = outer
 
 	return env
