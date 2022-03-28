@@ -31,29 +31,16 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return e.evalProgram(node.Statements, env)
 
 	case *ast.BlockStatement:
-		enclosed := NewEnclosedEnvironment(env)
-		obj := e.evalBlockStatement(node, enclosed)
-
-		return obj
+		return e.evalBlockStatement(node, env)
 
 	case *ast.ExpressionStatement:
 		return e.Eval(node.Expression, env)
 
 	case *ast.LetStatement:
-		val := e.Eval(node.Value, env)
-		if isError(val) {
-			return val
-		}
-
-		env.Let(node.Name.Value, val)
+		return e.evalLetStatement(node, env)
 
 	case *ast.ReturnStatement:
-		val := e.Eval(node.ReturnValue, env)
-		if isError(val) {
-			return val
-		}
-
-		return &ReturnValue{Value: val}
+		return e.evalReturnStatement(node, env)
 
 	case *ast.ForStatement:
 		return e.evalForStatement(node, env)
@@ -75,33 +62,13 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return boolToBoolObject(node.Value)
 
 	case *ast.PrefixExpression:
-		right := e.Eval(node.Right, env)
-		if isError(right) {
-			return right
-		}
-
-		return e.evalPrefixExpression(node.Operator, right)
+		return e.evalPrefixExpression(node, env)
 
 	case *ast.InfixExpression:
-		left := e.Eval(node.Left, env)
-		if isError(left) {
-			return left
-		}
-
-		right := e.Eval(node.Right, env)
-		if isError(right) {
-			return right
-		}
-
-		return e.evalInfixExpression(node.Operator, left, right)
+		return e.evalInfixExpression(node, env)
 
 	case *ast.PostfixExpression:
-		switch left := node.Left.(type) {
-		case *ast.Identifier:
-			return e.evalPostfixExpression(node.Operator, left, env)
-		default:
-			return newError("postfix expression must be identifier")
-		}
+		return e.evalPostfixExpression(node, env)
 
 	case *ast.IfExpression:
 		return e.evalIfExpression(node, env)
@@ -110,59 +77,39 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return e.evalIdentifier(node, env)
 
 	case *ast.FunctionLiteral:
-		params := node.Parameters
-		body := node.Body
-
-		return &Function{Parameters: params, Env: env, Body: body}
+		return &Function{Parameters: node.Parameters, Body: node.Body, Env: env}
 
 	case *ast.CallExpression:
-		function := e.Eval(node.Function, env)
-		if isError(function) {
-			return function
-		}
-
-		args := e.evalExpressions(node.Arguments, env)
-		if len(args) == 1 && isError(args[0]) {
-			return args[0]
-		}
-
-		return e.applyFunction(function, args)
+		return e.evalCallExpression(node, env)
 
 	case *ast.StringLiteral:
 		return &String{Value: node.Value}
 
 	case *ast.AssignExpression:
-		val := e.Eval(node.Value, env)
-		if isError(val) {
-			return val
-		}
-
-		_, ok := env.Set(node.Name.Value, val)
-		if !ok {
-			return newError("identifier not found: " + node.Name.Value)
-		}
-
-		return val
+		return e.evalAssignExpression(node, env)
 
 	case *ast.ArrayLiteral:
-		objects := make([]Object, len(node.Value))
-
-		for index, expr := range node.Value {
-			object := e.Eval(expr, env)
-			if isError(object) {
-				return object
-			}
-
-			objects[index] = object
-		}
-
-		return &Array{Value: objects}
+		return e.evalArrayLiteral(node, env)
 
 	case *ast.IndexExpression:
 		return e.evalIndexExpression(node, env)
 	}
 
 	return NULL
+}
+
+func (e *Evaluator) evalCallExpression(node *ast.CallExpression, env *Environment) Object {
+	function := e.Eval(node.Function, env)
+	if isError(function) {
+		return function
+	}
+
+	args := e.evalExpressions(node.Arguments, env)
+	if len(args) == 1 && isError(args[0]) {
+		return args[0]
+	}
+
+	return e.applyFunction(function, args)
 }
 
 func (e *Evaluator) applyFunction(fn Object, args []Object) Object {
@@ -173,6 +120,7 @@ func (e *Evaluator) applyFunction(fn Object, args []Object) Object {
 		}
 		extendedEnv := e.extendFunctionEnv(fn, args)
 		evaluated := e.Eval(fn.Body, extendedEnv)
+
 		return unwrapReturnValue(evaluated)
 
 	case *Builtin:
@@ -203,6 +151,26 @@ func unwrapReturnValue(obj Object) Object {
 	}
 
 	return obj
+}
+
+func (e *Evaluator) evalLetStatement(node *ast.LetStatement, env *Environment) Object {
+	val := e.Eval(node.Value, env)
+	if isError(val) {
+		return val
+	}
+
+	env.Let(node.Name.Value, val)
+
+	return NULL
+}
+
+func (e *Evaluator) evalReturnStatement(node *ast.ReturnStatement, env *Environment) Object {
+	val := e.Eval(node.ReturnValue, env)
+	if isError(val) {
+		return val
+	}
+
+	return &ReturnValue{Value: val}
 }
 
 func (e *Evaluator) evalExpressions(exps []ast.Expression, env *Environment) []Object {
@@ -240,10 +208,11 @@ func (e *Evaluator) evalProgram(statements []ast.Statement, env *Environment) Ob
 }
 
 func (e *Evaluator) evalBlockStatement(block *ast.BlockStatement, env *Environment) Object {
-	var result Object
+	enclosedEnv := NewEnclosedEnvironment(env)
 
+	var result Object
 	for _, statement := range block.Statements {
-		result = e.Eval(statement, env)
+		result = e.Eval(statement, enclosedEnv)
 
 		if isReturn(result) {
 			return result
@@ -353,15 +322,20 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Enviro
 	return NULL
 }
 
-func (e *Evaluator) evalPrefixExpression(operator string, right Object) Object {
-	switch operator {
+func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Environment) Object {
+	right := e.Eval(node.Right, env)
+	if isError(right) {
+		return right
+	}
+
+	switch node.Operator {
 	case "!":
 		return e.evalBangOperatorExpression(right)
 	case "-":
 		return e.evalMinusPrefixOperatorExpression(right)
 
 	default:
-		return newError("unknown operator: %s%s", operator, right.Inspect())
+		return newError("unknown operator: %s%s", node.Operator, right.Inspect())
 	}
 }
 
@@ -378,50 +352,60 @@ func (e *Evaluator) evalMinusPrefixOperatorExpression(right Object) Object {
 	return &Integer{Value: -value}
 }
 
-func (e *Evaluator) evalInfixExpression(operator string, left, right Object) Object {
+func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environment) Object {
+	left := e.Eval(node.Left, env)
+	if isError(left) {
+		return left
+	}
+
+	right := e.Eval(node.Right, env)
+	if isError(right) {
+		return right
+	}
+
 	switch {
 	case left.Type() == INTEGER_OBJ && right.Type() == INTEGER_OBJ:
 		leftVal := left.(*Integer).Value
 		rightVal := right.(*Integer).Value
 
-		return e.evalIntegerInfixExpression(operator, leftVal, rightVal)
+		return e.evalIntegerInfixExpression(node.Operator, leftVal, rightVal)
 
 	case left.Type() == FLOAT_OBJ && right.Type() == FLOAT_OBJ:
 		leftVal := left.(*Float).Value
 		rightVal := right.(*Float).Value
 
-		return e.evalFloatInfixExpression(operator, leftVal, rightVal)
+		return e.evalFloatInfixExpression(node.Operator, leftVal, rightVal)
 
 	case left.Type() == FLOAT_OBJ && right.Type() == INTEGER_OBJ:
 		leftVal := left.(*Float).Value
 		rightVal := right.(*Integer).Value
 
-		return e.evalFloatInfixExpression(operator, leftVal, float64(rightVal))
+		return e.evalFloatInfixExpression(node.Operator, leftVal, float64(rightVal))
 
 	case left.Type() == INTEGER_OBJ && right.Type() == FLOAT_OBJ:
 		leftVal := left.(*Integer).Value
 		rightVal := right.(*Float).Value
 
-		return e.evalFloatInfixExpression(operator, float64(leftVal), rightVal)
+		return e.evalFloatInfixExpression(node.Operator, float64(leftVal), rightVal)
 
 	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
-		return e.evalStringInfixExpression(operator, left, right)
+		return e.evalStringInfixExpression(node.Operator, left, right)
 
-	case operator == "==":
+	case node.Operator == "==":
 		return boolToBoolObject(left == right)
 
-	case operator == "!=":
+	case node.Operator == "!=":
 		return boolToBoolObject(left != right)
 
-	case operator == "&&":
+	case node.Operator == "&&":
 		return boolToBoolObject(isTruthy(left) && isTruthy(right))
 
-	case operator == "||":
+	case node.Operator == "||":
 		return boolToBoolObject(isTruthy(left) || isTruthy(right))
 
 	default:
 		return newError("unknown operator: %s %s %s",
-			left.Inspect(), operator, right.Inspect())
+			left.Inspect(), node.Operator, right.Inspect())
 	}
 }
 
@@ -496,30 +480,6 @@ func (e *Evaluator) evalStringInfixExpression(operator string, left, right Objec
 	return &String{Value: leftVal + rightVal}
 }
 
-func (e *Evaluator) evalPostfixExpression(operator string, left *ast.Identifier, env *Environment) Object {
-	value := e.Eval(left, env)
-	if isError(value) {
-		return value
-	}
-
-	switch value.Type() {
-	case INTEGER_OBJ:
-		switch operator {
-		case "++":
-			intObj := value.(*Integer)
-			intObj.Value++
-
-			env.Set(left.Value, intObj)
-			return intObj
-
-		default:
-			return newError("unknown operator: %s%s", operator, value.Inspect())
-		}
-	default:
-		return newError("unknown operator: %s%s", operator, value.Inspect())
-	}
-}
-
 func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *Environment) Object {
 	condition := e.Eval(ie.Condition, env)
 	if isError(condition) {
@@ -545,6 +505,21 @@ func (e *Evaluator) evalIdentifier(node *ast.Identifier, env *Environment) Objec
 	}
 
 	return newError("identifier not found: " + node.Value)
+}
+
+func (e *Evaluator) evalArrayLiteral(node *ast.ArrayLiteral, env *Environment) Object {
+	objects := make([]Object, len(node.Value))
+
+	for index, expr := range node.Value {
+		object := e.Eval(expr, env)
+		if isError(object) {
+			return object
+		}
+
+		objects[index] = object
+	}
+
+	return &Array{Value: objects}
 }
 
 func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environment) Object {
@@ -590,6 +565,50 @@ func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, in
 	}
 
 	return &String{Value: string([]rune(strObj.Value)[idx])}
+}
+
+func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Environment) Object {
+	val := e.Eval(node.Value, env)
+	if isError(val) {
+		return val
+	}
+
+	_, ok := env.Set(node.Name.Value, val)
+	if !ok {
+		return newError("identifier not found: " + node.Name.Value)
+	}
+
+	return val
+}
+
+func (e *Evaluator) evalPostfixExpression(node *ast.PostfixExpression, env *Environment) Object {
+	switch left := node.Left.(type) {
+	case *ast.Identifier:
+		value := e.Eval(left, env)
+		if isError(value) {
+			return value
+		}
+
+		switch value.Type() {
+		case INTEGER_OBJ:
+			switch node.Operator {
+			case "++":
+				intObj := value.(*Integer)
+				intObj.Value++
+
+				env.Set(left.Value, intObj)
+				return intObj
+
+			default:
+				return newError("unknown operator: %s%s", node.Operator, value.Inspect())
+			}
+		default:
+			return newError("unknown operator: %s%s", node.Operator, value.Inspect())
+		}
+
+	default:
+		return newError("postfix expression must be identifier")
+	}
 }
 
 func newError(format string, a ...interface{}) *Error {

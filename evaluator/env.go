@@ -7,11 +7,7 @@ type Environment struct {
 }
 
 func NewEnvironment() *Environment {
-	return &Environment{
-		Store:    nil,
-		Outer:    nil,
-		Includes: nil,
-	}
+	return &Environment{}
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
