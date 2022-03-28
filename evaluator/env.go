@@ -1,15 +1,5 @@
 package evaluator
 
-import (
-	"sync"
-)
-
-var envPool = sync.Pool{
-	New: func() interface{} {
-		return &Environment{}
-	},
-}
-
 type Environment struct {
 	Store    map[string]Object
 	Outer    *Environment
@@ -17,13 +7,15 @@ type Environment struct {
 }
 
 func NewEnvironment() *Environment {
-	return &Environment{}
+	return &Environment{
+		Store:    nil,
+		Outer:    nil,
+		Includes: nil,
+	}
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
-	env := envPool.Get().(*Environment)
-	env.ClearStore()
-	env.Includes = nil
+	env := NewEnvironment()
 	env.Outer = outer
 
 	return env
@@ -99,8 +91,4 @@ func (e *Environment) ClearStore() {
 	for k := range e.Store {
 		delete(e.Store, k)
 	}
-}
-
-func (e *Environment) Dispose() {
-	envPool.Put(e)
 }
