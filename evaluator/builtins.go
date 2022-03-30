@@ -77,4 +77,17 @@ var builtins = map[string]*Builtin{
 			return newError("argument to `sqrt` not supported")
 		},
 	},
+	"input": {
+		Fn: func(evaluator *Evaluator, args ...Object) Object {
+			if len(args) != 0 {
+				prompt := args[0]
+				fmt.Print(prompt.Inspect())
+			}
+
+			var input string
+			fmt.Scanln(&input)
+
+			return &String{Value: input}
+		},
+	},
 }
