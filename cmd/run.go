@@ -14,7 +14,7 @@ import (
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run [file]",
-	Short: "A brief description of your command",
+	Short: "Run a Wind script",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("requires 1 argument")

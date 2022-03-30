@@ -8,7 +8,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "windlang",
-	Short: "A brief description of your application",
+	Short: "WindLang, A simple programming language written in golang",
 }
 
 func Execute() {
