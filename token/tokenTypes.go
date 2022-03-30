@@ -52,6 +52,7 @@ const (
 	FOR
 	INCLUDE
 	WHILE
+	NIL
 )
 
 func (t *TokenType) String() string {
@@ -124,6 +125,8 @@ func (t *TokenType) String() string {
 		return "WHILE"
 	case FLOAT:
 		return "FLOAT"
+	case NIL:
+		return "NIL"
 	default:
 		return "UNKNOWN"
 	}

@@ -91,6 +91,8 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 		return p.parseStringLiteral
 	case token.LBRACKET:
 		return p.parseArrayLiteral
+	case token.NIL:
+		return p.parseNilLiteral
 	}
 
 	return nil
@@ -498,6 +500,14 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	p.nextToken()
 
 	exp.Value = p.parseCallArguments(token.RBRACKET)
+
+	return &exp
+}
+
+func (p *Parser) parseNilLiteral() ast.Expression {
+	exp := ast.NilLiteral{Token: p.curToken}
+
+	p.nextToken()
 
 	return &exp
 }

@@ -13,7 +13,7 @@ const (
 	INTEGER_OBJ ObjectType = iota
 	FLOAT_OBJ
 	BOOLEAN_OBJ
-	NULL_OBJ
+	NIL_OBJ
 	RETURN_VALUE_OBJ
 	ERROR_OBJ
 	FUNCTION_OBJ
@@ -61,11 +61,11 @@ func (b *Boolean) Clone() Object {
 	return &c
 }
 
-type Null struct{}
+type Nil struct{}
 
-func (n *Null) Type() ObjectType { return NULL_OBJ }
-func (n *Null) Inspect() string  { return "null" }
-func (n *Null) Clone() Object    { return n }
+func (n *Nil) Type() ObjectType { return NIL_OBJ }
+func (n *Nil) Inspect() string  { return "nil" }
+func (n *Nil) Clone() Object    { return n }
 
 type ReturnValue struct {
 	Value Object

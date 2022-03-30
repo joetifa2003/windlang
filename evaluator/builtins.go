@@ -32,7 +32,7 @@ var builtins = map[string]*Builtin{
 
 			fmt.Println(argsString...)
 
-			return NULL
+			return NIL
 		},
 	},
 	"print": {
@@ -44,7 +44,7 @@ var builtins = map[string]*Builtin{
 
 			fmt.Print(argsString...)
 
-			return NULL
+			return NIL
 		},
 	},
 	"string": {

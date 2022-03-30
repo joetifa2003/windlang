@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	NULL  = &Null{}
+	NIL   = &Nil{}
 	TRUE  = &Boolean{Value: true}
 	FALSE = &Boolean{Value: false}
 )
@@ -93,9 +93,12 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.IndexExpression:
 		return e.evalIndexExpression(node, env)
+
+	case *ast.NilLiteral:
+		return NIL
 	}
 
-	return NULL
+	return NIL
 }
 
 func (e *Evaluator) evalCallExpression(node *ast.CallExpression, env *Environment) Object {
@@ -161,7 +164,7 @@ func (e *Evaluator) evalLetStatement(node *ast.LetStatement, env *Environment) O
 
 	env.Let(node.Name.Value, val)
 
-	return NULL
+	return NIL
 }
 
 func (e *Evaluator) evalReturnStatement(node *ast.ReturnStatement, env *Environment) Object {
@@ -280,7 +283,7 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *Environment) O
 		}
 	}
 
-	return NULL
+	return NIL
 }
 
 func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *Environment) Object {
@@ -300,7 +303,7 @@ func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *Environmen
 		}
 	}
 
-	return NULL
+	return NIL
 }
 
 func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Environment) Object {
@@ -319,7 +322,7 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Enviro
 
 	env.Includes = append(env.Includes, fileEnv)
 
-	return NULL
+	return NIL
 }
 
 func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Environment) Object {
@@ -491,7 +494,7 @@ func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *Environment) Obj
 	} else if ie.ElseBranch != nil {
 		return e.Eval(ie.ElseBranch, env)
 	} else {
-		return NULL
+		return NIL
 	}
 }
 
@@ -549,7 +552,7 @@ func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array, i
 	max := int64(len(arrayObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NULL
+		return NIL
 	}
 
 	return arrayObj.Value[idx]
@@ -561,7 +564,7 @@ func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, in
 	max := int64(len(strObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NULL
+		return NIL
 	}
 
 	return &String{Value: string([]rune(strObj.Value)[idx])}
@@ -617,7 +620,7 @@ func newError(format string, a ...interface{}) *Error {
 
 func isTruthy(obj Object) bool {
 	switch obj {
-	case NULL:
+	case NIL:
 		return false
 
 	case TRUE:

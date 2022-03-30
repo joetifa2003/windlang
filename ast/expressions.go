@@ -249,3 +249,8 @@ func (ie *IndexExpression) String() string {
 
 	return out.String()
 }
+
+type NilLiteral struct{ Expression, Token token.Token }
+
+func (ne *NilLiteral) TokenLiteral() string { return ne.Token.Literal }
+func (ne *NilLiteral) String() string       { return "nil" }

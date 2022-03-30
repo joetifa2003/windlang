@@ -35,6 +35,9 @@ func isKeyword(ident string) (TokenType, bool) {
 		return INCLUDE, true
 	case "while":
 		return WHILE, true
+	case "nil":
+		return NIL, true
+
 	}
 
 	return IDENT, false
