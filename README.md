@@ -16,8 +16,10 @@
     - [Functions](#functions)
     - [Closures](#closures)
     - [If expressions](#if-expressions)
+    - [Include statement](#include-statement)
     - [For loops](#for-loops)
     - [While loops](#while-loops)
+    - [HashMaps](#hashmaps)
   - [Todos](#todos)
 
 ## What is wind?
@@ -168,6 +170,27 @@ As you can see here we can use it as an expression or as a statement
 
 Note that after any expression the semicolon is optional. We can type `"You passed";` or `"You passed"` and it will implicitly return it
 
+### Include statement
+
+```swift
+// main.wind
+include "test.wind";
+
+greeter(); // Hello 👋
+```
+
+```swift
+// test.wind
+
+let msg = "Hello 👋";
+
+let greeter = fn() {
+    println(msg);
+};
+```
+
+Include statements allow you to include other Wind scripts, It initializes them once and can be used by multiple files at the same time while preserving state.
+
 ### For loops
 
 ```swift
@@ -202,10 +225,29 @@ while (x < 5) {
 // 4
 ```
 
+### HashMaps
+
+```swift
+let person = {
+    "name": "Youssef",
+    "age": 18,
+    "incrementAge": fn() {
+        person.age++;
+    }
+};
+
+println(person["name"]); // Youssef
+println(person.age); // 18
+person.incrementAge();
+println(person.age); // 19
+```
+
+Hashmaps are like js object and can store key value pairs, Keys can be integers, strings and booleans. Values can be any type.
+
 ## Todos
 
 -   Named include statements
 
--   HashMaps (Javascript objects)
+-   ~~HashMaps (Javascript objects~~
 
 -   A bytecode interpreter maybe
