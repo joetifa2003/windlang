@@ -685,32 +685,29 @@ func (e *Evaluator) evalAssingHashIndexExpression(leftObj *Hash, index Object, v
 }
 
 func (e *Evaluator) evalPostfixExpression(node *ast.PostfixExpression, env *Environment) Object {
-	switch left := node.Left.(type) {
-	case *ast.Identifier:
-		value := e.Eval(left, env)
-		if isError(value) {
-			return value
-		}
+	left := e.Eval(node.Left, env)
+	if isError(left) {
+		return left
+	}
 
-		switch value.Type() {
-		case INTEGER_OBJ:
-			switch node.Operator {
-			case "++":
-				intObj := value.(*Integer)
-				intObj.Value++
-
-				env.Set(left.Value, intObj)
-				return intObj
-
-			default:
-				return newError("unknown operator: %s%s", node.Operator, value.Inspect())
-			}
-		default:
-			return newError("unknown operator: %s%s", node.Operator, value.Inspect())
-		}
-
+	switch left := left.(type) {
+	case *Integer:
+		return e.evalPostfixIntegerExpression(node.Operator, left)
 	default:
-		return newError("postfix expression must be identifier")
+		return newError("postfix operator not supported: %s", left.Inspect())
+	}
+}
+
+func (e *Evaluator) evalPostfixIntegerExpression(operator string, left *Integer) Object {
+	switch operator {
+	case "++":
+		left.Value++
+		return left
+	case "--":
+		left.Value--
+		return left
+	default:
+		return newError("postfix operator not supported: %s", operator)
 	}
 }
 
