@@ -128,6 +128,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Literal = l.readString()
 	case ':':
 		tok = newToken(token.COLON, l.ch)
+	case '.':
+		tok = newToken(token.DOT, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF

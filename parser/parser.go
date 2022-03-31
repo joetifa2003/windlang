@@ -25,7 +25,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	POSTFIX     // x++ or x--
-	HEIGHTS     // myFunction(X)
+	HIGHEST
 )
 
 type Parser struct {
@@ -62,8 +62,8 @@ func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 		return AND
 	case token.OR:
 		return OR
-	case token.LPAREN, token.LBRACKET:
-		return HEIGHTS
+	case token.LPAREN, token.LBRACKET, token.DOT:
+		return HIGHEST
 	}
 
 	return LOWEST
@@ -112,6 +112,8 @@ func (p *Parser) getInfixParseFn(tokenType token.TokenType) infixParseFn {
 		return p.parseAssignExpression
 	case token.LBRACKET:
 		return p.parseIndexExpression
+	case token.DOT:
+		return p.parseDotExpression
 	}
 
 	return nil
@@ -607,6 +609,18 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	if !p.expectCurrent(token.RBRACKET) {
 		return nil
 	}
+
+	return &exp
+}
+
+func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
+	exp := ast.IndexExpression{Token: p.curToken, Left: left}
+
+	p.nextToken()
+
+	exp.Index = &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+
+	p.nextToken()
 
 	return &exp
 }

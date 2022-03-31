@@ -34,6 +34,7 @@ const (
 	// Delimiters
 	COMMA
 	COLON
+	DOT
 	SEMICOLON
 	LPAREN
 	RPAREN
