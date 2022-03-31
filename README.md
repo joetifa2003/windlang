@@ -18,6 +18,7 @@
     - [If expressions](#if-expressions)
     - [For loops](#for-loops)
     - [While loops](#while-loops)
+    - [HashMaps](#hashmaps)
   - [Todos](#todos)
 
 ## What is wind?
@@ -202,10 +203,29 @@ while (x < 5) {
 // 4
 ```
 
+### HashMaps
+
+```swift
+let person = {
+    "name": "Youssef",
+    "age": 18,
+    "incrementAge": fn() {
+        person.age++;
+    }
+};
+
+println(person["name"]); // Youssef
+println(person.age); // 18
+person.incrementAge();
+println(person.age); // 19
+```
+
+Hashmaps are like js object and can store key value pairs, Keys can be integers, strings and booleans. Values can be any type.
+
 ## Todos
 
 -   Named include statements
 
--   HashMaps (Javascript objects)
+-   ~~HashMaps (Javascript objects~~
 
 -   A bytecode interpreter maybe
