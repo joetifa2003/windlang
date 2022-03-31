@@ -193,7 +193,7 @@ type AssignExpression struct {
 	Expression
 
 	Token token.Token
-	Name  *Identifier
+	Name  Expression
 	Value Expression
 }
 
@@ -254,3 +254,13 @@ type NilLiteral struct{ Expression, Token token.Token }
 
 func (ne *NilLiteral) TokenLiteral() string { return ne.Token.Literal }
 func (ne *NilLiteral) String() string       { return "nil" }
+
+type HashLiteral struct {
+	Expression
+
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
+func (hl *HashLiteral) String() string       { return "hash" }

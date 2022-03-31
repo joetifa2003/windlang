@@ -96,6 +96,9 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.NilLiteral:
 		return NIL
+
+	case *ast.HashLiteral:
+		return e.evalHashLiteral(node, env)
 	}
 
 	return NIL
@@ -538,15 +541,42 @@ func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environm
 
 	switch left.Type() {
 	case ARRAY_OBJ:
-		return e.evalArrayIndexExpression(node, left, index)
+		return e.evalArrayIndexExpression(left, index)
 	case STRING_OBJ:
-		return e.evalStringIndexExpression(node, left, index)
+		return e.evalStringIndexExpression(left, index)
+	case HASH_OBJ:
+		return e.evalHashIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Inspect())
 	}
 }
 
-func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array, index Object) Object {
+func (e *Evaluator) evalHashLiteral(node *ast.HashLiteral, env *Environment) Object {
+	hash := make(map[HashKey]Object)
+
+	for key, value := range node.Pairs {
+		hashKey := e.Eval(key, env)
+		if isError(hashKey) {
+			return hashKey
+		}
+
+		key, ok := hashKey.(Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", hashKey.Inspect())
+		}
+
+		hashValue := e.Eval(value, env)
+		if isError(hashValue) {
+			return hashValue
+		}
+
+		hash[key.HashKey()] = hashValue
+	}
+
+	return &Hash{Pairs: hash}
+}
+
+func (e *Evaluator) evalArrayIndexExpression(array, index Object) Object {
 	arrayObj := array.(*Array)
 	idx := index.(*Integer).Value
 	max := int64(len(arrayObj.Value) - 1)
@@ -558,7 +588,7 @@ func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array, i
 	return arrayObj.Value[idx]
 }
 
-func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, index Object) Object {
+func (e *Evaluator) evalStringIndexExpression(str, index Object) Object {
 	strObj := str.(*String)
 	idx := index.(*Integer).Value
 	max := int64(len(strObj.Value) - 1)
@@ -570,16 +600,86 @@ func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, in
 	return &String{Value: string([]rune(strObj.Value)[idx])}
 }
 
+func (e *Evaluator) evalHashIndexExpression(hash, index Object) Object {
+	hashObj := hash.(*Hash)
+	key, ok := index.(Hashable)
+	if !ok {
+		return newError("unusable as hash key: %s", index.Inspect())
+	}
+
+	if val, ok := hashObj.Pairs[key.HashKey()]; ok {
+		return val
+	}
+
+	return NIL
+}
+
 func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Environment) Object {
 	val := e.Eval(node.Value, env)
 	if isError(val) {
 		return val
 	}
 
-	_, ok := env.Set(node.Name.Value, val)
-	if !ok {
-		return newError("identifier not found: " + node.Name.Value)
+	switch left := node.Name.(type) {
+	case *ast.Identifier:
+		return e.evalAssingIdentifierExpression(left, val, env)
+
+	case *ast.IndexExpression:
+		return e.evalAssingIndexExpression(left, val, env)
 	}
+
+	return val
+}
+
+func (e *Evaluator) evalAssingIdentifierExpression(left *ast.Identifier, val Object, env *Environment) Object {
+	_, ok := env.Set(left.Value, val)
+	if !ok {
+		return newError("identifier not found: " + left.Value)
+	}
+
+	return val
+}
+
+func (e *Evaluator) evalAssingIndexExpression(left *ast.IndexExpression, val Object, env *Environment) Object {
+	leftObj := e.Eval(left.Left, env)
+	if isError(leftObj) {
+		return leftObj
+	}
+
+	index := e.Eval(left.Index, env)
+	if isError(index) {
+		return index
+	}
+
+	switch leftObj := leftObj.(type) {
+	case *Array:
+		return e.evalAssingArrayIndexExpression(leftObj, index, val)
+	case *Hash:
+		return e.evalAssingHashIndexExpression(leftObj, index, val)
+	default:
+		return newError("index operator not supported: %s", leftObj.Inspect())
+	}
+}
+
+func (e *Evaluator) evalAssingArrayIndexExpression(leftObj *Array, index Object, val Object) Object {
+	idx := index.(*Integer).Value
+	max := int64(len(leftObj.Value) - 1)
+
+	if idx < 0 || idx > max {
+		return NIL
+	}
+
+	leftObj.Value[idx] = val
+	return val
+}
+
+func (e *Evaluator) evalAssingHashIndexExpression(leftObj *Hash, index Object, val Object) Object {
+	key, ok := index.(Hashable)
+	if !ok {
+		return newError("unusable as hash key: %s", index.Inspect())
+	}
+
+	leftObj.Pairs[key.HashKey()] = val
 
 	return val
 }

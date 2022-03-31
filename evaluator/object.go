@@ -3,6 +3,7 @@ package evaluator
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"strings"
 	"wind-vm-go/ast"
 )
@@ -20,12 +21,22 @@ const (
 	STRING_OBJ
 	BUILTIN_OBJ
 	ARRAY_OBJ
+	HASH_OBJ
 )
 
 type Object interface {
 	Type() ObjectType
 	Inspect() string
 	Clone() Object
+}
+
+type Hashable interface {
+	HashKey() HashKey
+}
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
 }
 
 type Integer struct {
@@ -37,6 +48,9 @@ func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Clone() Object {
 	c := *i
 	return &c
+}
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 
 type Float struct {
@@ -59,6 +73,17 @@ func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
 func (b *Boolean) Clone() Object {
 	c := *b
 	return &c
+}
+func (b *Boolean) HashKey() HashKey {
+	var val uint64
+
+	if b.Value {
+		val = 1
+	} else {
+		val = 2
+	}
+
+	return HashKey{Type: b.Type(), Value: val}
 }
 
 type Nil struct{}
@@ -125,6 +150,11 @@ func (s *String) Clone() Object {
 	c := *s
 	return &c
 }
+func (s *String) HashKey() HashKey {
+	algo := fnv.New64a()
+	algo.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: algo.Sum64()}
+}
 
 type BuiltinFunction func(evaluator *Evaluator, args ...Object) Object
 
@@ -158,5 +188,32 @@ func (a *Array) Inspect() string {
 }
 func (a *Array) Clone() Object {
 	c := *a
+	return &c
+}
+
+type Hash struct {
+	Pairs map[HashKey]Object
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ }
+
+func (h *Hash) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("{")
+
+	for _, value := range h.Pairs {
+		out.WriteString(": ")
+		out.WriteString(value.Inspect())
+		out.WriteString(", ")
+	}
+
+	out.WriteString("}")
+
+	return out.String()
+}
+
+func (h *Hash) Clone() Object {
+	c := *h
 	return &c
 }

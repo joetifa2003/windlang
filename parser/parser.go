@@ -93,6 +93,8 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 		return p.parseArrayLiteral
 	case token.NIL:
 		return p.parseNilLiteral
+	case token.LBRACE:
+		return p.parseHashLiteral
 	}
 
 	return nil
@@ -295,6 +297,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	if prefix == nil {
 		msg := fmt.Sprintf("cannot parse %s as an expression", p.curToken.Literal)
 		p.Errors = append(p.Errors, msg)
+		p.nextToken()
 		return nil
 	}
 
@@ -512,6 +515,39 @@ func (p *Parser) parseNilLiteral() ast.Expression {
 	return &exp
 }
 
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hash := ast.HashLiteral{
+		Token: p.curToken,
+		Pairs: make(map[ast.Expression]ast.Expression),
+	}
+
+	p.nextToken()
+
+	for !p.currentTokenIs(token.RBRACE) {
+		key := p.parseExpression(LOWEST)
+
+		if !p.expectCurrent(token.COLON) {
+			return nil
+		}
+
+		value := p.parseExpression(LOWEST)
+
+		hash.Pairs[key] = value
+
+		if !p.currentTokenIs(token.RBRACE) {
+			if !p.expectCurrent(token.COMMA) {
+				return nil
+			}
+		}
+	}
+
+	if !p.expectCurrent(token.RBRACE) {
+		return nil
+	}
+
+	return &hash
+}
+
 func (p *Parser) parseCallArguments(endToken token.TokenType) []ast.Expression {
 	args := []ast.Expression{}
 
@@ -547,16 +583,9 @@ func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseAssignExpression(left ast.Expression) ast.Expression {
-	ident, ok := left.(*ast.Identifier)
-	if !ok {
-		msg := fmt.Sprintf("left-hand side of assignment must be an identifier, got %T", left)
-		p.Errors = append(p.Errors, msg)
-		return nil
-	}
-
 	expression := ast.AssignExpression{
 		Token: p.curToken,
-		Name:  ident,
+		Name:  left,
 	}
 
 	precedence := p.curPrecedence()
