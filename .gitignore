@@ -1,4 +1,5 @@
-
 main.wind
 main.exe
 test.py
+node_modules
+*.vsix

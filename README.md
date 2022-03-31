@@ -58,6 +58,7 @@ Use "windlang [command] --help" for more information about a command.
 ```
 
 This is the Wind cli you can use the run command to run a Wind script file
+Install the vscode extension [here](https://marketplace.visualstudio.com/items?itemName=YoussefAhmed.windlang)!
 
 ## So what can it do?
 

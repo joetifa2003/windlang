@@ -1,0 +1,98 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "windlang",
+    "patterns": [
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#identifiers"
+        },
+        {
+            "include": "#semicolons"
+        }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.windlang",
+                    "match": "\\b(if|while|for|return|include|let|fn)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "name": "string.quoted.double.windlang",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.windlang",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.windlang",
+                    "match": "(0x[0-9a-fA-F]+|[0-9]+(\\.[0-9]+)?)"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.windlang",
+                    "match": "\\+|\\-|\\*|\\/|\\%|\\^|\\=|\\!|\\<|\\>|\\&|\\||\\?|\\:|\\~"
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "variable.parameter.windlang",
+                    "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+                }
+            ]
+        },
+        "semicolons": {
+            "patterns": [
+                {
+                    "name": "punctuation.separator.semicolon.windlang",
+                    "match": ";"
+                },
+                {
+                    "name": "punctuation.separator.comma.windlang",
+                    "match": ","
+                },
+                {
+                    "name": "punctuation.separator.period.windlang",
+                    "match": "\\."
+                },
+                {
+                    "name": "punctuation.separator.colon.windlang",
+                    "match": ":"
+                },
+                {
+                    "name": "punctuation.definition.function.windlang",
+                    "match": "\\("
+                },
+                {
+                    "name": "punctuation.definition.function.windlang",
+                    "match": "\\)"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.wind"
+}

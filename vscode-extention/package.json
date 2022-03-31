@@ -1,0 +1,43 @@
+{
+    "name": "windlang",
+    "displayName": "Windlang",
+    "description": "Syntax highlighting for Windlang",
+    "version": "0.1.3",
+    "icon": "assets/WindLogo.png",
+    "publisher": "YoussefAhmed",
+    "repository": {
+        "url": "https://github.com/joetifa2003/windlang"
+    },
+    "engines": {
+        "vscode": "^1.64.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "windlang",
+                "icon": {
+                    "light": "./assets/WindLogo.png",
+                    "dark": "./assets/WindLogo.png"
+                },
+                "aliases": [
+                    "windlang",
+                    "windlang"
+                ],
+                "extensions": [
+                    "wind"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "windlang",
+                "scopeName": "source.wind",
+                "path": "./syntaxes/windlang.tmLanguage.json"
+            }
+        ]
+    }
+}
