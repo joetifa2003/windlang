@@ -25,7 +25,8 @@ func New(envManager *EnvironmentManager) *Evaluator {
 	}
 }
 
-func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
+// Eval returns the result of the evaluation and potential error
+func (e *Evaluator) Eval(node ast.Node, env *Environment) (Object, *Error) {
 	switch node := node.(type) {
 	case *ast.Program:
 		return e.evalProgram(node.Statements, env)
@@ -49,17 +50,17 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return e.evalWhileStatement(node, env)
 
 	case *ast.IncludeStatement:
-		return e.evalIncludeStatement(node, env)
+		return e.evalIncludeStatement(node, env), nil
 
 	// Expressions
 	case *ast.IntegerLiteral:
-		return &Integer{Value: node.Value}
+		return &Integer{Value: node.Value}, nil
 
 	case *ast.FloatLiteral:
-		return &Float{Value: node.Value}
+		return &Float{Value: node.Value}, nil
 
 	case *ast.Boolean:
-		return boolToBoolObject(node.Value)
+		return boolToBoolObject(node.Value), nil
 
 	case *ast.PrefixExpression:
 		return e.evalPrefixExpression(node, env)
@@ -77,13 +78,13 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return e.evalIdentifier(node, env)
 
 	case *ast.FunctionLiteral:
-		return &Function{Parameters: node.Parameters, Body: node.Body, Env: env}
+		return &Function{Parameters: node.Parameters, Body: node.Body, Env: env}, nil
 
 	case *ast.CallExpression:
 		return e.evalCallExpression(node, env)
 
 	case *ast.StringLiteral:
-		return &String{Value: node.Value}
+		return &String{Value: node.Value}, nil
 
 	case *ast.AssignExpression:
 		return e.evalAssignExpression(node, env)
@@ -95,45 +96,48 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Object {
 		return e.evalIndexExpression(node, env)
 
 	case *ast.NilLiteral:
-		return NIL
+		return NIL, nil
 
 	case *ast.HashLiteral:
 		return e.evalHashLiteral(node, env)
 	}
 
-	return NIL
+	return NIL, nil
 }
 
-func (e *Evaluator) evalCallExpression(node *ast.CallExpression, env *Environment) Object {
-	function := e.Eval(node.Function, env)
-	if isError(function) {
-		return function
+func (e *Evaluator) evalCallExpression(node *ast.CallExpression, env *Environment) (Object, *Error) {
+	function, err := e.Eval(node.Function, env)
+	if err != nil {
+		return nil, err
 	}
 
-	args := e.evalExpressions(node.Arguments, env)
-	if len(args) == 1 && isError(args[0]) {
-		return args[0]
+	args, err := e.evalExpressions(node.Arguments, env)
+	if err != nil {
+		return nil, err
 	}
 
 	return e.applyFunction(function, args)
 }
 
-func (e *Evaluator) applyFunction(fn Object, args []Object) Object {
+func (e *Evaluator) applyFunction(fn Object, args []Object) (Object, *Error) {
 	switch fn := fn.(type) {
 	case *Function:
 		if len(args) != len(fn.Parameters) {
-			return newError("expected %d arg(s) got %d", len(fn.Parameters), len(args))
+			return nil, newError("expected %d arg(s) got %d", len(fn.Parameters), len(args))
 		}
 		extendedEnv := e.extendFunctionEnv(fn, args)
-		evaluated := e.Eval(fn.Body, extendedEnv)
+		evaluated, err := e.Eval(fn.Body, extendedEnv)
+		if err != nil {
+			return nil, err
+		}
 
-		return unwrapReturnValue(evaluated)
+		return unwrapReturnValue(evaluated), nil
 
 	case *Builtin:
-		return fn.Fn(e, args...)
+		return fn.Fn(e, args...), nil
 
 	default:
-		return newError("not a function: %s", fn.Inspect())
+		return nil, newError("not a function: %s", fn.Inspect())
 	}
 
 }
@@ -159,81 +163,83 @@ func unwrapReturnValue(obj Object) Object {
 	return obj
 }
 
-func (e *Evaluator) evalLetStatement(node *ast.LetStatement, env *Environment) Object {
-	val := e.Eval(node.Value, env)
-	if isError(val) {
-		return val
+func (e *Evaluator) evalLetStatement(node *ast.LetStatement, env *Environment) (Object, *Error) {
+	val, err := e.Eval(node.Value, env)
+	if err != nil {
+		return nil, err
 	}
 
 	env.Let(node.Name.Value, val)
 
-	return NIL
+	return NIL, nil
 }
 
-func (e *Evaluator) evalReturnStatement(node *ast.ReturnStatement, env *Environment) Object {
-	val := e.Eval(node.ReturnValue, env)
-	if isError(val) {
-		return val
+func (e *Evaluator) evalReturnStatement(node *ast.ReturnStatement, env *Environment) (Object, *Error) {
+	val, err := e.Eval(node.ReturnValue, env)
+	if err != nil {
+		return nil, err
 	}
 
-	return &ReturnValue{Value: val}
+	return &ReturnValue{Value: val}, nil
 }
 
-func (e *Evaluator) evalExpressions(exps []ast.Expression, env *Environment) []Object {
+func (e *Evaluator) evalExpressions(exps []ast.Expression, env *Environment) ([]Object, *Error) {
 	var result []Object
 
 	for _, exp := range exps {
-		evaluated := e.Eval(exp, env)
-
-		if isError(evaluated) {
-			return []Object{evaluated}
+		evaluated, err := e.Eval(exp, env)
+		if err != nil {
+			return nil, err
 		}
 
 		result = append(result, evaluated)
 	}
 
-	return result
+	return result, nil
 }
 
-func (e *Evaluator) evalProgram(statements []ast.Statement, env *Environment) Object {
+func (e *Evaluator) evalProgram(statements []ast.Statement, env *Environment) (Object, *Error) {
 	var result Object
 
 	for _, statement := range statements {
-		result = e.Eval(statement, env)
+		result, err := e.Eval(statement, env)
+		if err != nil {
+			return nil, err
+		}
 
 		switch result := result.(type) {
-		case *Error:
-			return result
-
 		case *ReturnValue:
-			return result.Value
+			return result.Value, nil
 		}
 	}
 
-	return result
+	return result, nil
 }
 
-func (e *Evaluator) evalBlockStatement(block *ast.BlockStatement, env *Environment) Object {
+func (e *Evaluator) evalBlockStatement(block *ast.BlockStatement, env *Environment) (Object, *Error) {
 	enclosedEnv := NewEnclosedEnvironment(env)
 
 	var result Object
 	for _, statement := range block.Statements {
-		result = e.Eval(statement, enclosedEnv)
+		result, err := e.Eval(statement, enclosedEnv)
+		if err != nil {
+			return nil, err
+		}
 
 		if isReturn(result) {
-			return result
+			return result, nil
 		}
 	}
 
-	return result
+	return result, nil
 }
 
-func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *Environment) Object {
+func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *Environment) (Object, *Error) {
 	enclosedEnv := NewEnclosedEnvironment(env)
 
-	init := e.Eval(node.Initializer, enclosedEnv)
-	if isError(init) {
-		return init
+	_, err := e.Eval(node.Initializer, enclosedEnv)
+	if err != nil {
+		return nil, err
 	}
 
 	switch body := node.Body.(type) {
@@ -241,72 +247,84 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *Environment) O
 		bodyEnv := NewEnclosedEnvironment(enclosedEnv)
 
 		for {
-			condition := e.Eval(node.Condition, enclosedEnv)
-			if isError(condition) {
-				return condition
+			condition, err := e.Eval(node.Condition, enclosedEnv)
+			if err != nil {
+				return nil, err
 			}
 
 			if !isTruthy(condition) {
 				break
 			}
 
-			result := e.evalBlockStatement(body, bodyEnv)
+			result, err := e.evalBlockStatement(body, bodyEnv)
+			if err != nil {
+				return nil, err
+			}
+
 			if isReturn(result) {
-				return result
+				return result, nil
 			}
 
 			bodyEnv.ClearStore()
 
-			increment := e.Eval(node.Increment, enclosedEnv)
-			if isError(increment) {
-				return increment
+			_, err = e.Eval(node.Increment, enclosedEnv)
+			if err != nil {
+				return nil, err
 			}
 		}
 
 	default:
 		for {
-			condition := e.Eval(node.Condition, enclosedEnv)
-			if isError(condition) {
-				return condition
+			condition, err := e.Eval(node.Condition, enclosedEnv)
+			if err != nil {
+				return nil, err
 			}
 
 			if !isTruthy(condition) {
 				break
 			}
 
-			result := e.Eval(body, enclosedEnv)
-			if isReturn(result) {
-				return result
+			result, err := e.Eval(body, enclosedEnv)
+			if err != nil {
+				return nil, err
 			}
 
-			increment := e.Eval(node.Increment, enclosedEnv)
-			if isError(increment) {
-				return increment
+			if isReturn(result) {
+				return result, nil
+			}
+
+			_, err = e.Eval(node.Increment, enclosedEnv)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
 
-	return NIL
+	return NIL, nil
 }
 
-func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *Environment) Object {
+func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *Environment) (Object, *Error) {
 	for {
-		condition := e.Eval(node.Condition, env)
-		if isError(condition) {
-			return condition
+		condition, err := e.Eval(node.Condition, env)
+		if err != nil {
+			return nil, err
 		}
 
 		if !isTruthy(condition) {
 			break
 		}
 
-		result := e.Eval(node.Body, env)
+		result, err := e.Eval(node.Body, env)
+		if err != nil {
+			return nil, err
+		}
+
 		if isReturn(result) {
-			return result
+			return result, nil
 		}
 	}
 
-	return NIL
+	return NIL, nil
 }
 
 func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Environment) Object {
@@ -328,10 +346,10 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Enviro
 	return NIL
 }
 
-func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Environment) Object {
-	right := e.Eval(node.Right, env)
-	if isError(right) {
-		return right
+func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Environment) (Object, *Error) {
+	right, err := e.Eval(node.Right, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch node.Operator {
@@ -341,32 +359,32 @@ func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Enviro
 		return e.evalMinusPrefixOperatorExpression(right)
 
 	default:
-		return newError("unknown operator: %s%s", node.Operator, right.Inspect())
+		return nil, newError("unknown operator: %s%s", node.Operator, right.Inspect())
 	}
 }
 
-func (e *Evaluator) evalBangOperatorExpression(right Object) Object {
-	return boolToBoolObject(!isTruthy(right))
+func (e *Evaluator) evalBangOperatorExpression(right Object) (Object, *Error) {
+	return boolToBoolObject(!isTruthy(right)), nil
 }
 
-func (e *Evaluator) evalMinusPrefixOperatorExpression(right Object) Object {
+func (e *Evaluator) evalMinusPrefixOperatorExpression(right Object) (Object, *Error) {
 	if right.Type() != INTEGER_OBJ {
-		return newError("unknown operator: -%s", right.Inspect())
+		return nil, newError("unknown operator: -%s", right.Inspect())
 	}
 
 	value := right.(*Integer).Value
-	return &Integer{Value: -value}
+	return &Integer{Value: -value}, nil
 }
 
-func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environment) Object {
-	left := e.Eval(node.Left, env)
-	if isError(left) {
-		return left
+func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environment) (Object, *Error) {
+	left, err := e.Eval(node.Left, env)
+	if err != nil {
+		return nil, err
 	}
 
-	right := e.Eval(node.Right, env)
-	if isError(right) {
-		return right
+	right, err := e.Eval(node.Right, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch {
@@ -398,98 +416,98 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environm
 		return e.evalStringInfixExpression(node.Operator, left, right)
 
 	case node.Operator == "==":
-		return boolToBoolObject(left == right)
+		return boolToBoolObject(left == right), nil
 
 	case node.Operator == "!=":
-		return boolToBoolObject(left != right)
+		return boolToBoolObject(left != right), nil
 
 	case node.Operator == "&&":
-		return boolToBoolObject(isTruthy(left) && isTruthy(right))
+		return boolToBoolObject(isTruthy(left) && isTruthy(right)), nil
 
 	case node.Operator == "||":
-		return boolToBoolObject(isTruthy(left) || isTruthy(right))
+		return boolToBoolObject(isTruthy(left) || isTruthy(right)), nil
 
 	default:
-		return newError("unknown operator: %s %s %s",
+		return nil, newError("unknown operator: %s %s %s",
 			left.Inspect(), node.Operator, right.Inspect())
 	}
 }
 
-func (e *Evaluator) evalIntegerInfixExpression(operator string, left, right int64) Object {
+func (e *Evaluator) evalIntegerInfixExpression(operator string, left, right int64) (Object, *Error) {
 	switch operator {
 	case "<":
-		return boolToBoolObject(left < right)
+		return boolToBoolObject(left < right), nil
 	case "<=":
-		return boolToBoolObject(left <= right)
+		return boolToBoolObject(left <= right), nil
 	case ">":
-		return boolToBoolObject(left > right)
+		return boolToBoolObject(left > right), nil
 	case ">=":
-		return boolToBoolObject(left >= right)
+		return boolToBoolObject(left >= right), nil
 	case "==":
-		return boolToBoolObject(left == right)
+		return boolToBoolObject(left == right), nil
 	case "!=":
-		return boolToBoolObject(left != right)
+		return boolToBoolObject(left != right), nil
 	case "+":
-		return &Integer{Value: left + right}
+		return &Integer{Value: left + right}, nil
 	case "-":
-		return &Integer{Value: left - right}
+		return &Integer{Value: left - right}, nil
 	case "*":
-		return &Integer{Value: left * right}
+		return &Integer{Value: left * right}, nil
 	case "/":
-		return &Integer{Value: left / right}
+		return &Integer{Value: left / right}, nil
 	case "%":
-		return &Integer{Value: left % right}
+		return &Integer{Value: left % right}, nil
 	default:
-		return newError("unknown operator: %d %s %d",
+		return nil, newError("unknown operator: %d %s %d",
 			left, operator, right)
 	}
 }
 
-func (e *Evaluator) evalFloatInfixExpression(operator string, left, right float64) Object {
+func (e *Evaluator) evalFloatInfixExpression(operator string, left, right float64) (Object, *Error) {
 	switch operator {
 	case "<":
-		return boolToBoolObject(left < right)
+		return boolToBoolObject(left < right), nil
 	case "<=":
-		return boolToBoolObject(left <= right)
+		return boolToBoolObject(left <= right), nil
 	case ">":
-		return boolToBoolObject(left > right)
+		return boolToBoolObject(left > right), nil
 	case ">=":
-		return boolToBoolObject(left >= right)
+		return boolToBoolObject(left >= right), nil
 	case "==":
-		return boolToBoolObject(left == right)
+		return boolToBoolObject(left == right), nil
 	case "!=":
-		return boolToBoolObject(left != right)
+		return boolToBoolObject(left != right), nil
 	case "+":
-		return &Float{Value: left + right}
+		return &Float{Value: left + right}, nil
 	case "-":
-		return &Float{Value: left - right}
+		return &Float{Value: left - right}, nil
 	case "*":
-		return &Float{Value: left * right}
+		return &Float{Value: left * right}, nil
 	case "/":
-		return &Float{Value: left / right}
+		return &Float{Value: left / right}, nil
 	case "%":
-		return &Float{Value: math.Mod(left, right)}
+		return &Float{Value: math.Mod(left, right)}, nil
 	default:
-		return newError("unknown operator: %f %s %f",
+		return nil, newError("unknown operator: %f %s %f",
 			left, operator, right)
 	}
 }
 
-func (e *Evaluator) evalStringInfixExpression(operator string, left, right Object) Object {
+func (e *Evaluator) evalStringInfixExpression(operator string, left, right Object) (Object, *Error) {
 	if operator != "+" {
-		return newError("unknown operator: %s %s %s",
+		return nil, newError("unknown operator: %s %s %s",
 			left.Inspect(), operator, right.Inspect())
 	}
 
 	leftVal := left.(*String).Value
 	rightVal := right.(*String).Value
-	return &String{Value: leftVal + rightVal}
+	return &String{Value: leftVal + rightVal}, nil
 }
 
-func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *Environment) Object {
-	condition := e.Eval(ie.Condition, env)
-	if isError(condition) {
-		return condition
+func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *Environment) (Object, *Error) {
+	condition, err := e.Eval(ie.Condition, env)
+	if err != nil {
+		return nil, err
 	}
 
 	if isTruthy(condition) {
@@ -497,46 +515,46 @@ func (e *Evaluator) evalIfExpression(ie *ast.IfExpression, env *Environment) Obj
 	} else if ie.ElseBranch != nil {
 		return e.Eval(ie.ElseBranch, env)
 	} else {
-		return NIL
+		return NIL, nil
 	}
 }
 
-func (e *Evaluator) evalIdentifier(node *ast.Identifier, env *Environment) Object {
+func (e *Evaluator) evalIdentifier(node *ast.Identifier, env *Environment) (Object, *Error) {
 	if val, ok := env.Get(node.Value); ok {
-		return val
+		return val, nil
 	}
 
 	if builtin, ok := builtins[node.Value]; ok {
-		return builtin
+		return builtin, nil
 	}
 
-	return newError("identifier not found: " + node.Value)
+	return nil, newError("identifier not found: " + node.Value)
 }
 
-func (e *Evaluator) evalArrayLiteral(node *ast.ArrayLiteral, env *Environment) Object {
+func (e *Evaluator) evalArrayLiteral(node *ast.ArrayLiteral, env *Environment) (Object, *Error) {
 	objects := make([]Object, len(node.Value))
 
 	for index, expr := range node.Value {
-		object := e.Eval(expr, env)
-		if isError(object) {
-			return object
+		object, err := e.Eval(expr, env)
+		if err != nil {
+			return nil, err
 		}
 
 		objects[index] = object
 	}
 
-	return &Array{Value: objects}
+	return &Array{Value: objects}, nil
 }
 
-func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environment) Object {
-	left := e.Eval(node.Left, env)
-	if isError(left) {
-		return left
+func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environment) (Object, *Error) {
+	left, err := e.Eval(node.Left, env)
+	if err != nil {
+		return nil, err
 	}
 
-	index := e.Eval(node.Index, env)
-	if isError(index) {
-		return index
+	index, err := e.Eval(node.Index, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch left.Type() {
@@ -547,77 +565,77 @@ func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environm
 	case HASH_OBJ:
 		return e.evalHashIndexExpression(left, index)
 	default:
-		return newError("index operator not supported: %s", left.Inspect())
+		return nil, newError("index operator not supported: %s", left.Inspect())
 	}
 }
 
-func (e *Evaluator) evalHashLiteral(node *ast.HashLiteral, env *Environment) Object {
+func (e *Evaluator) evalHashLiteral(node *ast.HashLiteral, env *Environment) (Object, *Error) {
 	hash := make(map[HashKey]Object)
 
 	for key, value := range node.Pairs {
-		hashKey := e.Eval(key, env)
-		if isError(hashKey) {
-			return hashKey
+		hashKey, err := e.Eval(key, env)
+		if err != nil {
+			return nil, err
 		}
 
 		key, ok := hashKey.(Hashable)
 		if !ok {
-			return newError("unusable as hash key: %s", hashKey.Inspect())
+			return nil, newError("unusable as hash key: %s", hashKey.Inspect())
 		}
 
-		hashValue := e.Eval(value, env)
-		if isError(hashValue) {
-			return hashValue
+		hashValue, err := e.Eval(value, env)
+		if err != nil {
+			return nil, err
 		}
 
 		hash[key.HashKey()] = hashValue
 	}
 
-	return &Hash{Pairs: hash}
+	return &Hash{Pairs: hash}, nil
 }
 
-func (e *Evaluator) evalArrayIndexExpression(array, index Object) Object {
+func (e *Evaluator) evalArrayIndexExpression(array, index Object) (Object, *Error) {
 	arrayObj := array.(*Array)
 	idx := index.(*Integer).Value
 	max := int64(len(arrayObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NIL
+		return NIL, nil
 	}
 
-	return arrayObj.Value[idx]
+	return arrayObj.Value[idx], nil
 }
 
-func (e *Evaluator) evalStringIndexExpression(str, index Object) Object {
+func (e *Evaluator) evalStringIndexExpression(str, index Object) (Object, *Error) {
 	strObj := str.(*String)
 	idx := index.(*Integer).Value
 	max := int64(len(strObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NIL
+		return NIL, nil
 	}
 
-	return &String{Value: string([]rune(strObj.Value)[idx])}
+	return &String{Value: string([]rune(strObj.Value)[idx])}, nil
 }
 
-func (e *Evaluator) evalHashIndexExpression(hash, index Object) Object {
+func (e *Evaluator) evalHashIndexExpression(hash, index Object) (Object, *Error) {
 	hashObj := hash.(*Hash)
 	key, ok := index.(Hashable)
 	if !ok {
-		return newError("unusable as hash key: %s", index.Inspect())
+		return nil, newError("unusable as hash key: %s", index.Inspect())
 	}
 
 	if val, ok := hashObj.Pairs[key.HashKey()]; ok {
-		return val
+		return val, nil
 	}
 
-	return NIL
+	return NIL, nil
 }
 
-func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Environment) Object {
-	val := e.Eval(node.Value, env)
-	if isError(val) {
-		return val
+func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Environment) (Object, *Error) {
+	val, err := e.Eval(node.Value, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch left := node.Name.(type) {
@@ -628,27 +646,27 @@ func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Enviro
 		return e.evalAssingIndexExpression(left, val, env)
 	}
 
-	return val
+	return val, nil
 }
 
-func (e *Evaluator) evalAssingIdentifierExpression(left *ast.Identifier, val Object, env *Environment) Object {
+func (e *Evaluator) evalAssingIdentifierExpression(left *ast.Identifier, val Object, env *Environment) (Object, *Error) {
 	_, ok := env.Set(left.Value, val)
 	if !ok {
-		return newError("identifier not found: " + left.Value)
+		return nil, newError("identifier not found: " + left.Value)
 	}
 
-	return val
+	return val, nil
 }
 
-func (e *Evaluator) evalAssingIndexExpression(left *ast.IndexExpression, val Object, env *Environment) Object {
-	leftObj := e.Eval(left.Left, env)
-	if isError(leftObj) {
-		return leftObj
+func (e *Evaluator) evalAssingIndexExpression(left *ast.IndexExpression, val Object, env *Environment) (Object, *Error) {
+	leftObj, err := e.Eval(left.Left, env)
+	if err != nil {
+		return nil, err
 	}
 
-	index := e.Eval(left.Index, env)
-	if isError(index) {
-		return index
+	index, err := e.Eval(left.Index, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch leftObj := leftObj.(type) {
@@ -657,57 +675,58 @@ func (e *Evaluator) evalAssingIndexExpression(left *ast.IndexExpression, val Obj
 	case *Hash:
 		return e.evalAssingHashIndexExpression(leftObj, index, val)
 	default:
-		return newError("index operator not supported: %s", leftObj.Inspect())
+		return nil, newError("index operator not supported: %s", leftObj.Inspect())
 	}
 }
 
-func (e *Evaluator) evalAssingArrayIndexExpression(leftObj *Array, index Object, val Object) Object {
+func (e *Evaluator) evalAssingArrayIndexExpression(leftObj *Array, index Object, val Object) (Object, *Error) {
 	idx := index.(*Integer).Value
 	max := int64(len(leftObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NIL
+		return NIL, nil
 	}
 
 	leftObj.Value[idx] = val
-	return val
+
+	return val, nil
 }
 
-func (e *Evaluator) evalAssingHashIndexExpression(leftObj *Hash, index Object, val Object) Object {
+func (e *Evaluator) evalAssingHashIndexExpression(leftObj *Hash, index Object, val Object) (Object, *Error) {
 	key, ok := index.(Hashable)
 	if !ok {
-		return newError("unusable as hash key: %s", index.Inspect())
+		return nil, newError("unusable as hash key: %s", index.Inspect())
 	}
 
 	leftObj.Pairs[key.HashKey()] = val
 
-	return val
+	return val, nil
 }
 
-func (e *Evaluator) evalPostfixExpression(node *ast.PostfixExpression, env *Environment) Object {
-	left := e.Eval(node.Left, env)
-	if isError(left) {
-		return left
+func (e *Evaluator) evalPostfixExpression(node *ast.PostfixExpression, env *Environment) (Object, *Error) {
+	left, err := e.Eval(node.Left, env)
+	if err != nil {
+		return nil, err
 	}
 
 	switch left := left.(type) {
 	case *Integer:
 		return e.evalPostfixIntegerExpression(node.Operator, left)
 	default:
-		return newError("postfix operator not supported: %s", left.Inspect())
+		return nil, newError("postfix operator not supported: %s", left.Inspect())
 	}
 }
 
-func (e *Evaluator) evalPostfixIntegerExpression(operator string, left *Integer) Object {
+func (e *Evaluator) evalPostfixIntegerExpression(operator string, left *Integer) (Object, *Error) {
 	switch operator {
 	case "++":
 		left.Value++
-		return left
+		return left, nil
 	case "--":
 		left.Value--
-		return left
+		return left, nil
 	default:
-		return newError("postfix operator not supported: %s", operator)
+		return nil, newError("postfix operator not supported: %s", operator)
 	}
 }
 
@@ -739,18 +758,10 @@ func boolToBoolObject(value bool) *Boolean {
 	return FALSE
 }
 
-func isError(obj Object) bool {
-	if obj != nil {
-		return obj.Type() == ERROR_OBJ
-	}
-
-	return false
-}
-
 func isReturn(obj Object) bool {
 	rt := obj.Type()
 
-	if rt == RETURN_VALUE_OBJ || rt == ERROR_OBJ {
+	if rt == RETURN_VALUE_OBJ {
 		return true
 	}
 
