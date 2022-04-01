@@ -2,3 +2,4 @@ build:
     goos:
         - windows
         - linux
+        - darwin
