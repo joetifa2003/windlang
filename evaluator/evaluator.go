@@ -371,12 +371,14 @@ func (e *Evaluator) evalBangOperatorExpression(right Object) (Object, *Error) {
 }
 
 func (e *Evaluator) evalMinusPrefixOperatorExpression(right Object) (Object, *Error) {
-	if right.Type() != INTEGER_OBJ {
+	switch right := right.(type) {
+	case *Integer:
+		return &Integer{Value: -right.Value}, nil
+	case *Float:
+		return &Float{Value: -right.Value}, nil
+	default:
 		return nil, newError("unknown operator: -%s", right.Inspect())
 	}
-
-	value := right.(*Integer).Value
-	return &Integer{Value: -value}, nil
 }
 
 func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environment) (Object, *Error) {
