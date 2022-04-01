@@ -57,9 +57,6 @@ var nextTokenTestCases = []struct {
 			{Type: token.EOF, Literal: ""},
 		},
 	},
-	// {
-	// 	input: "let while for if else fn include return",
-	// }
 }
 
 func TestNextToken(t *testing.T) {

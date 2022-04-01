@@ -200,9 +200,10 @@ func (e *Evaluator) evalExpressions(exps []ast.Expression, env *Environment) ([]
 
 func (e *Evaluator) evalProgram(statements []ast.Statement, env *Environment) (Object, *Error) {
 	var result Object
+	var err *Error
 
 	for _, statement := range statements {
-		result, err := e.Eval(statement, env)
+		result, err = e.Eval(statement, env)
 		if err != nil {
 			return nil, err
 		}
@@ -220,8 +221,10 @@ func (e *Evaluator) evalBlockStatement(block *ast.BlockStatement, env *Environme
 	enclosedEnv := NewEnclosedEnvironment(env)
 
 	var result Object
+	var err *Error
+
 	for _, statement := range block.Statements {
-		result, err := e.Eval(statement, enclosedEnv)
+		result, err = e.Eval(statement, enclosedEnv)
 		if err != nil {
 			return nil, err
 		}
