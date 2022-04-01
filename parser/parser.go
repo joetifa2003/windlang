@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"wind-vm-go/ast"
 	"wind-vm-go/lexer"
@@ -29,7 +30,8 @@ const (
 )
 
 type Parser struct {
-	lexer *lexer.Lexer
+	lexer    *lexer.Lexer
+	filePath string
 
 	Errors []string
 
@@ -37,8 +39,8 @@ type Parser struct {
 	peekToken token.Token
 }
 
-func New(l *lexer.Lexer) *Parser {
-	p := Parser{lexer: l}
+func New(l *lexer.Lexer, filePath string) *Parser {
+	p := Parser{lexer: l, filePath: filePath}
 
 	p.nextToken()
 	p.nextToken()
@@ -263,7 +265,7 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 
 	p.nextToken()
 
-	stmt.Path = p.curToken.Literal
+	stmt.Path = filepath.Join(filepath.Dir(p.filePath), p.curToken.Literal)
 
 	p.nextToken()
 

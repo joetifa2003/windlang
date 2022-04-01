@@ -36,7 +36,7 @@ var runCmd = &cobra.Command{
 
 		input := string(file)
 		lexer := lexer.New(input)
-		parser := parser.New(lexer)
+		parser := parser.New(lexer, filePath)
 		program := parser.ParseProgram()
 
 		if len(parser.Errors) != 0 {

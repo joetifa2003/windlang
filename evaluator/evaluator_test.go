@@ -386,7 +386,7 @@ func TestArrayIndex(t *testing.T) {
 
 func testEval(input string) (Object, *Error) {
 	l := lexer.New(input)
-	p := parser.New(l)
+	p := parser.New(l, fileName)
 	program := p.ParseProgram()
 
 	envManager := NewEnvironmentManager()

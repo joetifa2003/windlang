@@ -50,7 +50,7 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) (Object, *Error) {
 		return e.evalWhileStatement(node, env)
 
 	case *ast.IncludeStatement:
-		return e.evalIncludeStatement(node, env), nil
+		return e.evalIncludeStatement(node, env)
 
 	// Expressions
 	case *ast.IntegerLiteral:
@@ -330,23 +330,29 @@ func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *Environmen
 	return NIL, nil
 }
 
-func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Environment) Object {
-
+func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Environment) (Object, *Error) {
 	path := node.Path
 	fileEnv, evaluated := e.envManager.Get(path)
 
 	if !evaluated {
-		file, _ := ioutil.ReadFile(path)
+		file, ioErr := ioutil.ReadFile(path)
+		if ioErr != nil {
+			return nil, newError("cannot read file: %s", path)
+		}
+
 		input := string(file)
 		lexer := lexer.New(input)
-		parser := parser.New(lexer)
+		parser := parser.New(lexer, path)
 		program := parser.ParseProgram()
-		e.Eval(program, fileEnv)
+		_, err := e.Eval(program, fileEnv)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	env.Includes = append(env.Includes, fileEnv)
 
-	return NIL
+	return NIL, nil
 }
 
 func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *Environment) (Object, *Error) {
