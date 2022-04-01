@@ -3,6 +3,9 @@
     "name": "windlang",
     "patterns": [
         {
+            "include": "#comments"
+        },
+        {
             "include": "#keywords"
         },
         {
@@ -26,7 +29,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.windlang",
-                    "match": "\\b(if|while|for|return|include|let|fn)\\b"
+                    "match": "(if|while|for|return|include|let|fn)"
                 }
             ]
         },
@@ -90,6 +93,14 @@
                 {
                     "name": "punctuation.definition.function.windlang",
                     "match": "\\)"
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.windlang",
+                    "match": "//.*$"
                 }
             ]
         }
