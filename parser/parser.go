@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"wind-vm-go/ast"
@@ -29,11 +30,16 @@ const (
 	HIGHEST
 )
 
+type ParserError struct {
+	Token token.Token
+	Msg   string
+}
+
 type Parser struct {
 	lexer    *lexer.Lexer
 	filePath string
 
-	Errors []string
+	Errors []ParserError
 
 	curToken  token.Token
 	peekToken token.Token
@@ -168,19 +174,13 @@ func (p *Parser) parseLetStatement() ast.Statement {
 
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-	if !p.expectCurrent(token.IDENT) {
-		return nil
-	}
+	p.expectCurrent(token.IDENT)
 
-	if !p.expectCurrent(token.ASSIGN) {
-		return nil
-	}
+	p.expectCurrent(token.ASSIGN)
 
 	stmt.Value = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.SEMICOLON) {
-		return nil
-	}
+	p.expectCurrent(token.SEMICOLON)
 
 	return &stmt
 }
@@ -192,9 +192,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	stmt.ReturnValue = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.SEMICOLON) {
-		return nil
-	}
+	p.expectCurrent(token.SEMICOLON)
 
 	return &stmt
 }
@@ -204,23 +202,17 @@ func (p *Parser) parseForStatement() ast.Statement {
 
 	p.nextToken()
 
-	if !p.expectCurrent(token.LPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.LPAREN)
 
 	stmt.Initializer = p.parseStatement()
 
 	stmt.Condition = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.SEMICOLON) {
-		return nil
-	}
+	p.expectCurrent(token.SEMICOLON)
 
 	stmt.Increment = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.RPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.RPAREN)
 
 	stmt.Body = p.parseBlockStatement()
 
@@ -243,9 +235,7 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
 
-	if !p.expectCurrent(token.LBRACE) {
-		return nil
-	}
+	p.expectCurrent(token.LBRACE)
 
 	for !p.currentTokenIs(token.RBRACE) && !p.currentTokenIs(token.EOF) {
 		stmt := p.parseStatement()
@@ -253,9 +243,7 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		block.Statements = append(block.Statements, stmt)
 	}
 
-	if !p.expectCurrent(token.RBRACE) {
-		return nil
-	}
+	p.expectCurrent(token.RBRACE)
 
 	return &block
 }
@@ -274,17 +262,11 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 
 		stmt.Alias = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-		if !p.expectCurrent(token.IDENT) {
-			return nil
-		}
+		p.expectCurrent(token.IDENT)
 
-		if !p.expectCurrent(token.SEMICOLON) {
-			return nil
-		}
+		p.expectCurrent(token.SEMICOLON)
 	} else {
-		if !p.expectCurrent(token.SEMICOLON) {
-			return nil
-		}
+		p.expectCurrent(token.SEMICOLON)
 	}
 
 	return &stmt
@@ -295,15 +277,11 @@ func (p *Parser) parseWhileStatement() *ast.WhileStatement {
 
 	p.nextToken()
 
-	if !p.expectCurrent(token.LPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.LPAREN)
 
 	stmt.Condition = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.RPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.RPAREN)
 
 	stmt.Body = p.parseBlockStatement()
 
@@ -314,7 +292,10 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.getPrefixParseFn(p.curToken.Type)
 	if prefix == nil {
 		msg := fmt.Sprintf("cannot parse %s as an expression", p.curToken.Literal)
-		p.Errors = append(p.Errors, msg)
+		p.Errors = append(p.Errors, ParserError{
+			Token: p.curToken,
+			Msg:   msg,
+		})
 		p.nextToken()
 		return nil
 	}
@@ -363,7 +344,10 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
-		p.Errors = append(p.Errors, msg)
+		p.Errors = append(p.Errors, ParserError{
+			Token: p.curToken,
+			Msg:   msg,
+		})
 		return nil
 	}
 
@@ -380,7 +364,10 @@ func (p *Parser) parseFloatLiteral() ast.Expression {
 
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as float", p.curToken.Literal)
-		p.Errors = append(p.Errors, msg)
+		p.Errors = append(p.Errors, ParserError{
+			Token: p.curToken,
+			Msg:   msg,
+		})
 		return nil
 	}
 
@@ -425,9 +412,7 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 	exp := p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.RPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.RPAREN)
 
 	return exp
 }
@@ -437,15 +422,11 @@ func (p *Parser) parseIfExpression() ast.Expression {
 
 	p.nextToken()
 
-	if !p.expectCurrent(token.LPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.LPAREN)
 
 	expression.Condition = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.RPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.RPAREN)
 
 	thenStatement := p.parseStatement()
 	expression.ThenBranch = thenStatement
@@ -466,9 +447,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 
 	p.nextToken()
 
-	if !p.expectCurrent(token.LPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.LPAREN)
 
 	lit.Parameters = p.parseFunctionParameters()
 
@@ -498,9 +477,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	identifiers = append(identifiers, &ident)
 	p.nextToken()
 
-	if !p.expectCurrent(token.RPAREN) {
-		return nil
-	}
+	p.expectCurrent(token.RPAREN)
 
 	return identifiers
 }
@@ -544,24 +521,18 @@ func (p *Parser) parseHashLiteral() ast.Expression {
 	for !p.currentTokenIs(token.RBRACE) {
 		key := p.parseExpression(LOWEST)
 
-		if !p.expectCurrent(token.COLON) {
-			return nil
-		}
+		p.expectCurrent(token.COLON)
 
 		value := p.parseExpression(LOWEST)
 
 		hash.Pairs[key] = value
 
 		if !p.currentTokenIs(token.RBRACE) {
-			if !p.expectCurrent(token.COMMA) {
-				return nil
-			}
+			p.expectCurrent(token.COMMA)
 		}
 	}
 
-	if !p.expectCurrent(token.RBRACE) {
-		return nil
-	}
+	p.expectCurrent(token.RBRACE)
 
 	return &hash
 }
@@ -581,9 +552,7 @@ func (p *Parser) parseCallArguments(endToken token.TokenType) []ast.Expression {
 		args = append(args, p.parseExpression(LOWEST))
 	}
 
-	if !p.expectCurrent(endToken) {
-		return nil
-	}
+	p.expectCurrent(endToken)
 
 	return args
 }
@@ -622,9 +591,7 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 
 	exp.Index = p.parseExpression(LOWEST)
 
-	if !p.expectCurrent(token.RBRACKET) {
-		return nil
-	}
+	p.expectCurrent(token.RBRACKET)
 
 	return &exp
 }
@@ -677,12 +644,28 @@ func (p *Parser) peekError(t token.TokenType) {
 	msg := fmt.Sprintf("expected next token to be %s, got %s instead",
 		t.String(), p.peekToken.Type.String())
 
-	p.Errors = append(p.Errors, msg)
+	p.Errors = append(p.Errors, ParserError{
+		Token: p.peekToken,
+		Msg:   msg,
+	})
 }
 
 func (p *Parser) currentError(t token.TokenType) {
 	msg := fmt.Sprintf("expected token to be %s, got %s instead",
 		t.String(), p.curToken.Type.String())
 
-	p.Errors = append(p.Errors, msg)
+	p.Errors = append(p.Errors, ParserError{
+		Token: p.curToken,
+		Msg:   msg,
+	})
+}
+
+func (p *Parser) ReportErrors() {
+	if len(p.Errors) != 0 {
+		for _, e := range p.Errors {
+			fmt.Printf("[file %s:%d]: %s\n", p.filePath, e.Token.Line, e.Msg)
+		}
+
+		os.Exit(1)
+	}
 }

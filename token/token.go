@@ -3,6 +3,7 @@ package token
 type Token struct {
 	Type    TokenType
 	Literal string
+	Line    int
 }
 
 func LookupIdent(ident string) TokenType {

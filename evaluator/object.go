@@ -108,7 +108,7 @@ type Error struct {
 }
 
 func (e *Error) Type() ObjectType { return ERROR_OBJ }
-func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
+func (e *Error) Inspect() string  { return e.Message }
 func (e *Error) Clone() Object {
 	c := *e
 	return &c
@@ -156,7 +156,7 @@ func (s *String) HashKey() HashKey {
 	return HashKey{Type: s.Type(), Value: algo.Sum64()}
 }
 
-type BuiltinFunction func(evaluator *Evaluator, args ...Object) Object
+type BuiltinFunction func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error)
 
 type Builtin struct {
 	Fn BuiltinFunction

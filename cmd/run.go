@@ -39,17 +39,11 @@ var runCmd = &cobra.Command{
 		parser := parser.New(lexer, filePath)
 		program := parser.ParseProgram()
 
-		if len(parser.Errors) != 0 {
-			for _, err := range parser.Errors {
-				fmt.Printf("[ERROR] %s\n", err)
-			}
-
-			return
-		}
+		parser.ReportErrors()
 
 		envManager := evaluator.NewEnvironmentManager()
 		env, _ := envManager.Get(filePath)
-		ev := evaluator.New(envManager)
+		ev := evaluator.New(envManager, filePath)
 		evaluated, evErr := ev.Eval(program, env)
 		if evErr != nil {
 			fmt.Println(evErr.Inspect())
