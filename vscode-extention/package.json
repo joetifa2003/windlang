@@ -2,7 +2,7 @@
     "name": "windlang",
     "displayName": "Windlang",
     "description": "Syntax highlighting for Windlang",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "icon": "assets/WindLogo.png",
     "publisher": "YoussefAhmed",
     "repository": {
