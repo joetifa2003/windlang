@@ -37,6 +37,8 @@ func isKeyword(ident string) (TokenType, bool) {
 		return WHILE, true
 	case "nil":
 		return NIL, true
+	case "as":
+		return AS, true
 
 	}
 

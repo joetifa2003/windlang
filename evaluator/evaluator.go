@@ -350,7 +350,15 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Enviro
 		}
 	}
 
-	env.Includes = append(env.Includes, fileEnv)
+	if node.Alias != nil {
+		hashMap := HashMapFromEnv(fileEnv)
+		includeEnv := NewEnvironment()
+		includeEnv.Let(node.Alias.Value, hashMap)
+
+		env.Includes = append(env.Includes, includeEnv)
+	} else {
+		env.Includes = append(env.Includes, fileEnv)
+	}
 
 	return NIL, nil
 }

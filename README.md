@@ -117,7 +117,7 @@ Yes, this looks like Rust functions. The last expression in a function is implic
 ### Closures
 
 ```swift
-let addConsturctor = fn(x) {
+let addConstructor = fn(x) {
     fn(y) {
         x + y;
     };
@@ -132,7 +132,7 @@ let addConstructor = fn(x) {
 };
 
 
-let addTwo = addConsturctor(2); // This will return a function
+let addTwo = addConstructor(2); // This will return a function
 
 println(addTwo(3)); // 5
 ```
@@ -173,13 +173,6 @@ Note that after any expression the semicolon is optional. We can type `"You pass
 ### Include statement
 
 ```swift
-// main.wind
-include "test.wind";
-
-greeter(); // Hello 👋
-```
-
-```swift
 // test.wind
 
 let msg = "Hello 👋";
@@ -187,6 +180,18 @@ let msg = "Hello 👋";
 let greeter = fn() {
     println(msg);
 };
+```
+
+```swift
+// main.wind
+include "test.wind";
+
+greeter(); // Hello 👋
+
+// You can also alias includes
+include "test.wind" as test;
+
+test.greeter(); // Hello 👋
 ```
 
 Include statements allow you to include other Wind scripts, It initializes them once and can be used by multiple files at the same time while preserving state.
@@ -246,7 +251,7 @@ Hashmaps are like js object and can store key value pairs, Keys can be integers,
 
 ## Todos
 
--   Named include statements
+-   ~~Named include statements~~
 
 -   ~~HashMaps (Javascript objects~~
 

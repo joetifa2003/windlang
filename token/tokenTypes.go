@@ -53,6 +53,7 @@ const (
 	RETURN
 	FOR
 	INCLUDE
+	AS
 	WHILE
 	NIL
 )
@@ -129,6 +130,8 @@ func (t *TokenType) String() string {
 		return "FLOAT"
 	case NIL:
 		return "NIL"
+	case AS:
+		return "AS"
 	default:
 		return "UNKNOWN"
 	}

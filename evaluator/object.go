@@ -196,7 +196,6 @@ type Hash struct {
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }
-
 func (h *Hash) Inspect() string {
 	var out bytes.Buffer
 
@@ -212,8 +211,17 @@ func (h *Hash) Inspect() string {
 
 	return out.String()
 }
-
 func (h *Hash) Clone() Object {
 	c := *h
 	return &c
+}
+func HashMapFromEnv(env *Environment) *Hash {
+	hash := make(map[HashKey]Object)
+
+	for key, value := range env.Store {
+		stringKey := String{Value: key}
+		hash[stringKey.HashKey()] = value
+	}
+
+	return &Hash{Pairs: hash}
 }

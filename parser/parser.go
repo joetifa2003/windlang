@@ -269,8 +269,22 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 
 	p.nextToken()
 
-	if !p.expectCurrent(token.SEMICOLON) {
-		return nil
+	if p.currentTokenIs(token.AS) {
+		p.nextToken()
+
+		stmt.Alias = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		if !p.expectCurrent(token.IDENT) {
+			return nil
+		}
+
+		if !p.expectCurrent(token.SEMICOLON) {
+			return nil
+		}
+	} else {
+		if !p.expectCurrent(token.SEMICOLON) {
+			return nil
+		}
 	}
 
 	return &stmt

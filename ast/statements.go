@@ -126,6 +126,7 @@ type IncludeStatement struct {
 
 	Token token.Token // the 'include' token
 	Path  string
+	Alias *Identifier
 }
 
 func (is *IncludeStatement) TokenLiteral() string { return is.Token.Literal }
