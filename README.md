@@ -4,6 +4,8 @@
 
 # WindLang, A simple programming language built with golang 🍃
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/joetifa2003/windlang)](https://goreportcard.com/report/github.com/joetifa2003/windlang)
+
 - [WindLang, A simple programming language built with golang 🍃](#windlang-a-simple-programming-language-built-with-golang-)
   - [What is wind?](#what-is-wind)
   - [Cool but why?](#cool-but-why)
