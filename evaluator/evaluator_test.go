@@ -2,9 +2,9 @@ package evaluator
 
 import (
 	"testing"
-	"wind-vm-go/lexer"
-	"wind-vm-go/parser"
 
+	"github.com/joetifa2003/windlang/lexer"
+	"github.com/joetifa2003/windlang/parser"
 	"github.com/stretchr/testify/assert"
 )
 

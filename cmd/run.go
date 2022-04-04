@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"wind-vm-go/evaluator"
-	"wind-vm-go/lexer"
-	"wind-vm-go/parser"
+
+	"github.com/joetifa2003/windlang/evaluator"
+	"github.com/joetifa2003/windlang/lexer"
+	"github.com/joetifa2003/windlang/parser"
 
 	"github.com/spf13/cobra"
 )

@@ -2,7 +2,8 @@ package lexer
 
 import (
 	"testing"
-	"wind-vm-go/token"
+
+	"github.com/joetifa2003/windlang/token"
 
 	"github.com/stretchr/testify/assert"
 )

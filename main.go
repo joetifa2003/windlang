@@ -1,7 +1,7 @@
 package main
 
 import (
-	"wind-vm-go/cmd"
+	"github.com/joetifa2003/windlang/cmd"
 )
 
 func main() {

@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"wind-vm-go/ast"
+
+	"github.com/joetifa2003/windlang/ast"
 )
 
 var builtins = map[string]*BuiltinFn{

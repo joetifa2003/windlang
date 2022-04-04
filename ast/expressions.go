@@ -3,7 +3,8 @@ package ast
 import (
 	"bytes"
 	"strings"
-	"wind-vm-go/token"
+
+	"github.com/joetifa2003/windlang/token"
 )
 
 type Identifier struct {

@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
-	"wind-vm-go/ast"
+
+	"github.com/joetifa2003/windlang/ast"
 )
 
 type ObjectType int

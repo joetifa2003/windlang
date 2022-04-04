@@ -2,7 +2,8 @@ package lexer
 
 import (
 	"strings"
-	"wind-vm-go/token"
+
+	"github.com/joetifa2003/windlang/token"
 )
 
 type Lexer struct {
@@ -131,7 +132,13 @@ func (l *Lexer) NextToken() token.Token {
 	case ':':
 		tok = l.newToken(token.COLON, l.ch)
 	case '.':
-		tok = l.newToken(token.DOT, l.ch)
+		if l.peekChar() == '.' {
+			l.readChar()
+
+			tok = token.Token{Type: token.DOTDOT, Literal: ".."}
+		} else {
+			tok = l.newToken(token.DOT, l.ch)
+		}
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF

@@ -1,4 +1,4 @@
-module wind-vm-go
+module github.com/joetifa2003/windlang
 
 go 1.18
 

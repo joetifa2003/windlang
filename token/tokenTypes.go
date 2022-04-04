@@ -30,6 +30,7 @@ const (
 	NOT_EQ // !=
 	PLUSPLUS
 	MINUSMINUS
+	DOTDOT
 
 	// Delimiters
 	COMMA
@@ -132,6 +133,8 @@ func (t *TokenType) String() string {
 		return "NIL"
 	case AS:
 		return "AS"
+	case DOTDOT:
+		return "DOTDOT"
 	default:
 		return "UNKNOWN"
 	}

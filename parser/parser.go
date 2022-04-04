@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"wind-vm-go/ast"
-	"wind-vm-go/lexer"
-	"wind-vm-go/token"
+
+	"github.com/joetifa2003/windlang/ast"
+	"github.com/joetifa2003/windlang/lexer"
+	"github.com/joetifa2003/windlang/token"
 )
 
 type (

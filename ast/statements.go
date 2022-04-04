@@ -2,7 +2,8 @@ package ast
 
 import (
 	"bytes"
-	"wind-vm-go/token"
+
+	"github.com/joetifa2003/windlang/token"
 )
 
 type Program struct {
