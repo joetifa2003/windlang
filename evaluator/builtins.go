@@ -1,13 +1,15 @@
 package evaluator
 
 import (
+	"bufio"
 	"fmt"
-	"math"
+	"os"
 	"wind-vm-go/ast"
 )
 
-var builtins = map[string]*Builtin{
+var builtins = map[string]*BuiltinFn{
 	"len": {
+		ArgsCount: 1,
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
 			if len(args) != 1 {
 				return nil, evaluator.newError(node.Token, "wrong number of arguments. got=%d, want=1",
@@ -25,6 +27,7 @@ var builtins = map[string]*Builtin{
 		},
 	},
 	"println": {
+		ArgsCount: -1,
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
 			argsString := []interface{}{}
 			for _, arg := range args {
@@ -37,6 +40,7 @@ var builtins = map[string]*Builtin{
 		},
 	},
 	"print": {
+		ArgsCount: -1,
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
 			argsString := []interface{}{}
 			for _, arg := range args {
@@ -49,12 +53,8 @@ var builtins = map[string]*Builtin{
 		},
 	},
 	"string": {
+		ArgsCount: 1,
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
-			if len(args) != 1 {
-				return nil, evaluator.newError(node.Token, "wrong number of arguments. got=%d, want=1",
-					len(args))
-			}
-
 			switch arg := args[0].(type) {
 			case *Integer:
 				return &String{Value: fmt.Sprintf("%d", arg.Value)}, nil
@@ -63,22 +63,9 @@ var builtins = map[string]*Builtin{
 			return nil, evaluator.newError(node.Token, "argument to `string` not supported")
 		},
 	},
-	"sqrt": {
-		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
-			switch arg := args[0].(type) {
-			case *Integer:
-				value := math.Sqrt(float64(arg.Value))
-
-				return &Float{Value: value}, nil
-
-			case *Float:
-				return &Float{Value: math.Sqrt(arg.Value)}, nil
-			}
-
-			return nil, evaluator.newError(node.Token, "argument to `sqrt` not supported")
-		},
-	},
 	"input": {
+		ArgsCount: -1,
+		ArgsTypes: []ObjectType{StringObj},
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
 			if len(args) != 0 {
 				prompt := args[0]
@@ -86,7 +73,9 @@ var builtins = map[string]*Builtin{
 			}
 
 			var input string
-			fmt.Scanln(&input)
+			scanner := bufio.NewScanner(os.Stdin)
+			scanner.Scan()
+			input = scanner.Text()
 
 			return &String{Value: input}, nil
 		},

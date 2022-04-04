@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"sync"
 	"wind-vm-go/ast"
 	"wind-vm-go/lexer"
 	"wind-vm-go/parser"
@@ -17,14 +18,20 @@ var (
 )
 
 type Evaluator struct {
-	envManager *EnvironmentManager
-	filePath   string
+	envManager   *EnvironmentManager
+	filePath     string
+	intConstants sync.Pool
 }
 
 func New(envManager *EnvironmentManager, filePath string) *Evaluator {
 	return &Evaluator{
 		envManager: envManager,
 		filePath:   filePath,
+		intConstants: sync.Pool{
+			New: func() any {
+				return &Integer{}
+			},
+		},
 	}
 }
 
@@ -128,6 +135,7 @@ func (e *Evaluator) applyFunction(node *ast.CallExpression, fn Object, args []Ob
 		if len(args) != len(fn.Parameters) {
 			return nil, e.newError(node.Token, "expected %d arg(s) got %d", len(fn.Parameters), len(args))
 		}
+
 		extendedEnv := e.extendFunctionEnv(fn, args)
 		evaluated, err := e.Eval(fn.Body, extendedEnv)
 		if err != nil {
@@ -136,7 +144,17 @@ func (e *Evaluator) applyFunction(node *ast.CallExpression, fn Object, args []Ob
 
 		return unwrapReturnValue(evaluated), nil
 
-	case *Builtin:
+	case *BuiltinFn:
+		if fn.ArgsCount != -1 && len(args) != fn.ArgsCount {
+			return nil, e.newError(node.Token, "expected %d arg(s) got %d", fn.ArgsCount, len(args))
+		}
+
+		for i, t := range fn.ArgsTypes {
+			if t != args[i].Type() {
+				return nil, e.newError(node.Token, "expected arg %d to be of type %s got %s", i, t, args[i].Type())
+			}
+		}
+
 		return fn.Fn(e, node, args...)
 
 	default:
@@ -356,11 +374,11 @@ func (e *Evaluator) evalIncludeStatement(node *ast.IncludeStatement, env *Enviro
 	}
 
 	if node.Alias != nil {
-		hashMap := HashMapFromEnv(fileEnv)
-		includeEnv := NewEnvironment()
-		includeEnv.Let(node.Alias.Value, hashMap)
+		includeObject := &IncludeObject{
+			Value: fileEnv,
+		}
 
-		env.Includes = append(env.Includes, includeEnv)
+		env.AddAlias(node.Alias.Value, includeObject)
 	} else {
 		env.Includes = append(env.Includes, fileEnv)
 	}
@@ -412,31 +430,31 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environm
 	}
 
 	switch {
-	case left.Type() == INTEGER_OBJ && right.Type() == INTEGER_OBJ:
+	case left.Type() == IntegerObj && right.Type() == IntegerObj:
 		leftVal := left.(*Integer).Value
 		rightVal := right.(*Integer).Value
 
 		return e.evalIntegerInfixExpression(node, node.Operator, leftVal, rightVal)
 
-	case left.Type() == FLOAT_OBJ && right.Type() == FLOAT_OBJ:
+	case left.Type() == FloatObj && right.Type() == FloatObj:
 		leftVal := left.(*Float).Value
 		rightVal := right.(*Float).Value
 
 		return e.evalFloatInfixExpression(node, node.Operator, leftVal, rightVal)
 
-	case left.Type() == FLOAT_OBJ && right.Type() == INTEGER_OBJ:
+	case left.Type() == FloatObj && right.Type() == IntegerObj:
 		leftVal := left.(*Float).Value
 		rightVal := right.(*Integer).Value
 
 		return e.evalFloatInfixExpression(node, node.Operator, leftVal, float64(rightVal))
 
-	case left.Type() == INTEGER_OBJ && right.Type() == FLOAT_OBJ:
+	case left.Type() == IntegerObj && right.Type() == FloatObj:
 		leftVal := left.(*Integer).Value
 		rightVal := right.(*Float).Value
 
 		return e.evalFloatInfixExpression(node, node.Operator, float64(leftVal), rightVal)
 
-	case left.Type() == STRING_OBJ && right.Type() == STRING_OBJ:
+	case left.Type() == StringObj && right.Type() == StringObj:
 		return e.evalStringInfixExpression(node, node.Operator, left, right)
 
 	case node.Operator == "==":
@@ -582,12 +600,14 @@ func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environm
 	}
 
 	switch left.Type() {
-	case ARRAY_OBJ:
+	case ArrayObj:
 		return e.evalArrayIndexExpression(node, left, index)
-	case STRING_OBJ:
+	case StringObj:
 		return e.evalStringIndexExpression(node, left, index)
-	case HASH_OBJ:
+	case HashObj:
 		return e.evalHashIndexExpression(node, left, index)
+	case IncludeObj:
+		return e.evalIncludeIndexExpression(node, left, index)
 	default:
 		return nil, e.newError(node.Token, "index operator not supported: %s", left.Inspect())
 	}
@@ -654,6 +674,21 @@ func (e *Evaluator) evalHashIndexExpression(node *ast.IndexExpression, hash, ind
 	}
 
 	return NIL, nil
+}
+
+func (e *Evaluator) evalIncludeIndexExpression(node *ast.IndexExpression, include, index Object) (Object, *Error) {
+	includeObj := include.(*IncludeObject)
+	key, ok := index.(*String)
+	if !ok {
+		return nil, e.newError(node.Token, "unusable as include key: %s", key.Inspect())
+	}
+
+	obj, ok := includeObj.Value.Store[key.Value]
+	if !ok {
+		return nil, e.newError(node.Token, "include key not found: %s", key.Inspect())
+	}
+
+	return obj, nil
 }
 
 func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Environment) (Object, *Error) {
@@ -785,7 +820,7 @@ func boolToBoolObject(value bool) *Boolean {
 func isReturn(obj Object) bool {
 	rt := obj.Type()
 
-	if rt == RETURN_VALUE_OBJ {
+	if rt == ReturnValueObj {
 		return true
 	}
 

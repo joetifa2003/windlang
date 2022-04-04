@@ -11,18 +11,50 @@ import (
 type ObjectType int
 
 const (
-	INTEGER_OBJ ObjectType = iota
-	FLOAT_OBJ
-	BOOLEAN_OBJ
-	NIL_OBJ
-	RETURN_VALUE_OBJ
-	ERROR_OBJ
-	FUNCTION_OBJ
-	STRING_OBJ
-	BUILTIN_OBJ
-	ARRAY_OBJ
-	HASH_OBJ
+	IntegerObj ObjectType = iota
+	FloatObj
+	BooleanObj
+	NilObj
+	ReturnValueObj
+	ErrorObj
+	FunctionObj
+	StringObj
+	BuiltinObj
+	ArrayObj
+	HashObj
+	IncludeObj
 )
+
+func (ot ObjectType) String() string {
+	switch ot {
+	case IntegerObj:
+		return "INTEGER"
+	case FloatObj:
+		return "FLOAT"
+	case BooleanObj:
+		return "BOOLEAN"
+	case NilObj:
+		return "NIL"
+	case ReturnValueObj:
+		return "RETURN_VALUE"
+	case ErrorObj:
+		return "ERROR"
+	case FunctionObj:
+		return "FUNCTION"
+	case StringObj:
+		return "STRING"
+	case BuiltinObj:
+		return "BUILTIN"
+	case ArrayObj:
+		return "ARRAY"
+	case HashObj:
+		return "HASH"
+	case IncludeObj:
+		return "INCLUDE"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 type Object interface {
 	Type() ObjectType
@@ -40,10 +72,11 @@ type HashKey struct {
 }
 
 type Integer struct {
-	Value int64
+	Constant bool
+	Value    int64
 }
 
-func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+func (i *Integer) Type() ObjectType { return IntegerObj }
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Clone() Object {
 	c := *i
@@ -57,7 +90,7 @@ type Float struct {
 	Value float64
 }
 
-func (f *Float) Type() ObjectType { return FLOAT_OBJ }
+func (f *Float) Type() ObjectType { return FloatObj }
 func (f *Float) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
 func (f *Float) Clone() Object {
 	c := *f
@@ -68,7 +101,7 @@ type Boolean struct {
 	Value bool
 }
 
-func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
+func (b *Boolean) Type() ObjectType { return BooleanObj }
 func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
 func (b *Boolean) Clone() Object {
 	c := *b
@@ -88,7 +121,7 @@ func (b *Boolean) HashKey() HashKey {
 
 type Nil struct{}
 
-func (n *Nil) Type() ObjectType { return NIL_OBJ }
+func (n *Nil) Type() ObjectType { return NilObj }
 func (n *Nil) Inspect() string  { return "nil" }
 func (n *Nil) Clone() Object    { return n }
 
@@ -96,7 +129,7 @@ type ReturnValue struct {
 	Value Object
 }
 
-func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
+func (rv *ReturnValue) Type() ObjectType { return ReturnValueObj }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 func (rv *ReturnValue) Clone() Object {
 	c := *rv
@@ -107,7 +140,7 @@ type Error struct {
 	Message string
 }
 
-func (e *Error) Type() ObjectType { return ERROR_OBJ }
+func (e *Error) Type() ObjectType { return ErrorObj }
 func (e *Error) Inspect() string  { return e.Message }
 func (e *Error) Clone() Object {
 	c := *e
@@ -120,7 +153,7 @@ type Function struct {
 	Env        *Environment
 }
 
-func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
+func (f *Function) Type() ObjectType { return FunctionObj }
 func (f *Function) Inspect() string {
 	var out bytes.Buffer
 	params := []string{}
@@ -144,7 +177,7 @@ type String struct {
 	Value string
 }
 
-func (s *String) Type() ObjectType { return STRING_OBJ }
+func (s *String) Type() ObjectType { return StringObj }
 func (s *String) Inspect() string  { return s.Value }
 func (s *String) Clone() Object {
 	c := *s
@@ -158,13 +191,15 @@ func (s *String) HashKey() HashKey {
 
 type BuiltinFunction func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error)
 
-type Builtin struct {
-	Fn BuiltinFunction
+type BuiltinFn struct {
+	ArgsCount int
+	ArgsTypes []ObjectType
+	Fn        BuiltinFunction
 }
 
-func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
-func (b *Builtin) Inspect() string  { return "builtin function" }
-func (b *Builtin) Clone() Object {
+func (b *BuiltinFn) Type() ObjectType { return BuiltinObj }
+func (b *BuiltinFn) Inspect() string  { return "builtin function" }
+func (b *BuiltinFn) Clone() Object {
 	c := *b
 	return &c
 }
@@ -173,7 +208,7 @@ type Array struct {
 	Value []Object
 }
 
-func (a *Array) Type() ObjectType { return ARRAY_OBJ }
+func (a *Array) Type() ObjectType { return ArrayObj }
 func (a *Array) Inspect() string {
 	var out bytes.Buffer
 
@@ -195,7 +230,7 @@ type Hash struct {
 	Pairs map[HashKey]Object
 }
 
-func (h *Hash) Type() ObjectType { return HASH_OBJ }
+func (h *Hash) Type() ObjectType { return HashObj }
 func (h *Hash) Inspect() string {
 	var out bytes.Buffer
 
@@ -211,17 +246,21 @@ func (h *Hash) Inspect() string {
 
 	return out.String()
 }
+
 func (h *Hash) Clone() Object {
 	c := *h
 	return &c
 }
-func HashMapFromEnv(env *Environment) *Hash {
-	hash := make(map[HashKey]Object)
 
-	for key, value := range env.Store {
-		stringKey := String{Value: key}
-		hash[stringKey.HashKey()] = value
-	}
+type IncludeObject struct {
+	Value *Environment
+}
 
-	return &Hash{Pairs: hash}
+func (i *IncludeObject) Type() ObjectType { return IncludeObj }
+func (i *IncludeObject) Inspect() string {
+	return "inclide_OBJ"
+}
+func (i *IncludeObject) Clone() Object {
+	c := *i
+	return &c
 }

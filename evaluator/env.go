@@ -1,9 +1,10 @@
 package evaluator
 
 type Environment struct {
-	Store    map[string]Object
-	Outer    *Environment
-	Includes []*Environment
+	Store           map[string]Object
+	Outer           *Environment
+	Includes        []*Environment
+	IncludesAliased map[string]*IncludeObject
 }
 
 func NewEnvironment() *Environment {
@@ -39,6 +40,11 @@ func (e *Environment) Get(name string) (Object, bool) {
 }
 
 func (e *Environment) getIncludes(name string) (Object, bool) {
+	aliasedInclude, ok := e.IncludesAliased[name]
+	if ok {
+		return aliasedInclude, true
+	}
+
 	for _, include := range e.Includes {
 		if obj, ok := include.Store[name]; ok {
 			return obj, ok
@@ -48,7 +54,7 @@ func (e *Environment) getIncludes(name string) (Object, bool) {
 	return nil, false
 }
 
-// For assigning
+// Set For assigning
 func (e *Environment) Set(name string, val Object) (Object, bool) {
 	if e.Store == nil {
 		if e.Outer != nil {
@@ -72,7 +78,7 @@ func (e *Environment) Set(name string, val Object) (Object, bool) {
 	return val, true
 }
 
-// For local scope variables
+// Let For local scope variables
 func (e *Environment) Let(name string, val Object) Object {
 	if e.Store == nil {
 		e.Store = make(map[string]Object)
@@ -87,4 +93,12 @@ func (e *Environment) ClearStore() {
 	for k := range e.Store {
 		delete(e.Store, k)
 	}
+}
+
+func (e *Environment) AddAlias(name string, include *IncludeObject) {
+	if e.IncludesAliased == nil {
+		e.IncludesAliased = make(map[string]*IncludeObject)
+	}
+
+	e.IncludesAliased[name] = include
 }

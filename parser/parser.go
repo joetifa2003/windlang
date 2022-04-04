@@ -22,7 +22,7 @@ const (
 	OR          // ||
 	AND         // &&
 	EQUALS      // ==
-	LESSGREATER // > or <
+	LessGreater // > or <
 	SUM         // +
 	PRODUCT     // *
 	PREFIX      // -X or !X
@@ -58,8 +58,10 @@ func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 	switch tokenType {
 	case token.EQ, token.NOT_EQ:
 		return EQUALS
+	case token.ASSIGN:
+		return ASSIGN
 	case token.LT, token.GT:
-		return LESSGREATER
+		return LessGreater
 	case token.PLUS, token.MINUS:
 		return SUM
 	case token.SLASH, token.ASTERISK, token.MODULO:
@@ -599,8 +601,9 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 	exp := ast.IndexExpression{Token: p.curToken, Left: left}
 
-	p.nextToken()
+	p.expectPeek(token.IDENT)
 
+	p.curToken.Type = token.STRING
 	exp.Index = &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 
 	p.nextToken()
