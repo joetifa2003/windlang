@@ -191,12 +191,12 @@ let greeter = fn() {
 
 ```swift
 // main.wind
-include "test.wind";
+include "./test.wind";
 
 greeter(); // Hello 👋
 
 // You can also alias includes
-include "test.wind" as test;
+include "./test.wind" as test;
 
 test.greeter(); // Hello 👋
 ```

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/joetifa2003/windlang/ast"
 	"github.com/joetifa2003/windlang/lexer"
@@ -255,7 +256,11 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 
 	p.nextToken()
 
-	stmt.Path = filepath.Join(filepath.Dir(p.filePath), p.curToken.Literal)
+	if strings.Contains(p.curToken.Literal, "./") || strings.Contains(p.curToken.Literal, "./") {
+		stmt.Path = filepath.Join(filepath.Dir(p.filePath), p.curToken.Literal)
+	} else {
+		stmt.Path = p.curToken.Literal
+	}
 
 	p.nextToken()
 
