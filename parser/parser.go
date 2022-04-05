@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 
@@ -664,12 +663,14 @@ func (p *Parser) currentError(t token.TokenType) {
 	})
 }
 
-func (p *Parser) ReportErrors() {
+func (p *Parser) ReportErrors() []string {
+	errors := []string{}
+
 	if len(p.Errors) != 0 {
 		for _, e := range p.Errors {
-			fmt.Printf("[file %s:%d]: %s\n", p.filePath, e.Token.Line, e.Msg)
+			errors = append(errors, fmt.Sprintf("[file %s:%d]: %s", p.filePath, e.Token.Line, e.Msg))
 		}
-
-		os.Exit(1)
 	}
+
+	return errors
 }

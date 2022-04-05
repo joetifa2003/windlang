@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/joetifa2003/windlang/evaluator"
 	"github.com/joetifa2003/windlang/lexer"
@@ -39,8 +40,14 @@ var runCmd = &cobra.Command{
 		lexer := lexer.New(input)
 		parser := parser.New(lexer, filePath)
 		program := parser.ParseProgram()
+		parserErrors := parser.ReportErrors()
+		if len(parserErrors) > 0 {
+			for _, err := range parserErrors {
+				fmt.Println(err)
+			}
 
-		parser.ReportErrors()
+			os.Exit(1)
+		}
 
 		envManager := evaluator.NewEnvironmentManager()
 		env, _ := envManager.Get(filePath)
