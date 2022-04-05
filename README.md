@@ -8,6 +8,7 @@
 
 - [WindLang, A simple programming language built with golang 🍃](#windlang-a-simple-programming-language-built-with-golang-)
   - [What is wind?](#what-is-wind)
+  - [Playground](#playground)
   - [Cool but why?](#cool-but-why)
   - [Why Golang, not Rust?](#why-golang-not-rust)
   - [How to use it?](#how-to-use-it)
@@ -27,6 +28,10 @@
 ## What is wind?
 
 Wind is an interpreted language written in golang.
+
+## Playground
+
+The easiest way to play with WindLang is to use the [playground](https://windlang-playground.vercel.app/)
 
 ## Cool but why?
 
