@@ -111,4 +111,30 @@ var builtins = map[string]*BuiltinFn{
 			return array, nil
 		},
 	},
+	"clone": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{ArrayObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
+			switch obj := args[0].(type) {
+			case *Array:
+				newArray := []Object{}
+				for _, v := range obj.Value {
+					newArray = append(newArray, v)
+				}
+
+				return &Array{Value: newArray}, nil
+			case *Hash:
+				newHash := map[HashKey]Object{}
+
+				for k, v := range obj.Pairs {
+					newHash[k] = v
+				}
+
+				return &Hash{Pairs: newHash}, nil
+
+			default:
+				return nil, evaluator.newError(node.Token, "argument to `clone` not supported")
+			}
+		},
+	},
 }
