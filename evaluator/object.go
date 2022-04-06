@@ -12,7 +12,8 @@ import (
 type ObjectType int
 
 const (
-	IntegerObj ObjectType = iota
+	Any ObjectType = iota
+	IntegerObj
 	FloatObj
 	BooleanObj
 	NilObj

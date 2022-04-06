@@ -151,7 +151,7 @@ func (e *Evaluator) applyFunction(node *ast.CallExpression, fn Object, args []Ob
 		}
 
 		for i, t := range fn.ArgsTypes {
-			if t != args[i].Type() {
+			if t != Any && t != args[i].Type() {
 				return nil, e.newError(node.Token, "expected arg %d to be of type %s got %s", i, t, args[i].Type())
 			}
 		}
@@ -744,7 +744,7 @@ func (e *Evaluator) evalAssingArrayIndexExpression(node *ast.AssignExpression, l
 	max := int64(len(leftObj.Value) - 1)
 
 	if idx < 0 || idx > max {
-		return NIL, nil
+		return nil, e.newError(node.Token, "index out of bounds")
 	}
 
 	leftObj.Value[idx] = val

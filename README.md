@@ -16,6 +16,7 @@
     - [Hello world?](#hello-world)
     - [Variables](#variables)
     - [Data types](#data-types)
+    - [Arrays](#arrays)
     - [Functions](#functions)
     - [Closures](#closures)
     - [If expressions](#if-expressions)
@@ -104,6 +105,22 @@ nil            // null
 "Hello World"  // String
 [1, "2", true] // Arrays
 ```
+
+### Arrays
+
+```swift
+let arr = [1, "2", true];
+
+println(arr[0]); // 1
+println(arr[1]); // 2
+println(arr[2]); // true
+
+append(arr, "3") // [1, "2", true, "3"]
+println(arr[3]); // 3
+```
+
+Arrays in Wind can take any type of data, and can be of any size.
+You can append to an array by using the `append` function.
 
 ### Functions
 

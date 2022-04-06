@@ -81,4 +81,16 @@ var builtins = map[string]*BuiltinFn{
 			return &String{Value: input}, nil
 		},
 	},
+	"append": {
+		ArgsCount: 2,
+		ArgsTypes: []ObjectType{ArrayObj, Any},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
+			array := args[0].(*Array)
+			value := args[1]
+
+			array.Value = append(array.Value, value)
+
+			return array, nil
+		},
+	},
 }
