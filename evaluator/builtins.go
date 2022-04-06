@@ -93,4 +93,22 @@ var builtins = map[string]*BuiltinFn{
 			return array, nil
 		},
 	},
+	"remove": {
+		ArgsCount: 2,
+		ArgsTypes: []ObjectType{ArrayObj, IntegerObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
+			array := args[0].(*Array)
+			idx := args[1].(*Integer)
+
+			newArray := []Object{}
+			for i, v := range array.Value {
+				if i != int(idx.Value) {
+					newArray = append(newArray, v)
+				}
+			}
+			array.Value = newArray
+
+			return array, nil
+		},
+	},
 }

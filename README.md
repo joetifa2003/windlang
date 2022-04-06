@@ -119,8 +119,9 @@ append(arr, "3") // [1, "2", true, "3"]
 println(arr[3]); // 3
 ```
 
-Arrays in Wind can take any type of data, and can be of any size.
-You can append to an array by using the `append` function.
+Arrays in Wind can take any type of data, and can be of any size
+You can append to an array by using the `append` function
+You can remove an element by index using the `remove` function.
 
 ### Functions
 
