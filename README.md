@@ -32,7 +32,7 @@ Wind is an interpreted language written in golang.
 
 ## Playground
 
-The easiest way to play with WindLang is to use the [playground](https://windlang-playground.vercel.app/)
+The easiest way to play with WindLang is to use the [playground](https://windlang.vercel.app/playground)
 
 ## Cool but why?
 
