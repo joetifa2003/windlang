@@ -145,7 +145,7 @@ func (e *Evaluator) applyFunction(node *ast.CallExpression, fn Object, args []Ob
 
 		return unwrapReturnValue(evaluated), nil
 
-	case *BuiltinFn:
+	case *GoFunction:
 		if fn.ArgsCount != -1 && len(args) != fn.ArgsCount {
 			return nil, e.newError(node.Token, "expected %d arg(s) got %d", fn.ArgsCount, len(args))
 		}
@@ -600,15 +600,30 @@ func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environm
 		return nil, err
 	}
 
-	switch left.Type() {
-	case ArrayObj:
+	switch left := left.(type) {
+	case *Array:
 		return e.evalArrayIndexExpression(node, left, index)
-	case StringObj:
-		return e.evalStringIndexExpression(node, left, index)
-	case HashObj:
+	case *Hash:
 		return e.evalHashIndexExpression(node, left, index)
-	case IncludeObj:
+	case *IncludeObject:
 		return e.evalIncludeIndexExpression(node, left, index)
+
+	case WithFunctions:
+		name, ok := index.(*String)
+		if !ok {
+			return nil, e.newError(node.Token, "cannot use %s as an index", index.Type().String())
+		}
+
+		fn, ok := left.GetFunction(name.Value)
+		if !ok {
+			return nil, e.newError(
+				node.Token, "cannot find '%s' function on type %s",
+				name.Value,
+				left.(Object).Type().String(),
+			)
+		}
+
+		return fn, nil
 	default:
 		return nil, e.newError(node.Token, "index operator not supported: %s", left.Inspect())
 	}
@@ -651,17 +666,17 @@ func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array, i
 	return arrayObj.Value[idx], nil
 }
 
-func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, index Object) (Object, *Error) {
-	strObj := str.(*String)
-	idx := index.(*Integer).Value
-	max := int64(len(strObj.Value) - 1)
+// func (e *Evaluator) evalStringIndexExpression(node *ast.IndexExpression, str, index Object) (Object, *Error) {
+// 	strObj := str.(*String)
+// 	idx := index.(*Integer).Value
+// 	max := int64(len(strObj.Value) - 1)
 
-	if idx < 0 || idx > max {
-		return NIL, nil
-	}
+// 	if idx < 0 || idx > max {
+// 		return NIL, nil
+// 	}
 
-	return &String{Value: string([]rune(strObj.Value)[idx])}, nil
-}
+// 	return &String{Value: string([]rune(strObj.Value)[idx])}, nil
+// }
 
 func (e *Evaluator) evalHashIndexExpression(node *ast.IndexExpression, hash, index Object) (Object, *Error) {
 	hashObj := hash.(*Hash)

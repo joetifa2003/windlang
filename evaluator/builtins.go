@@ -8,7 +8,7 @@ import (
 	"github.com/joetifa2003/windlang/ast"
 )
 
-var builtins = map[string]*BuiltinFn{
+var builtins = map[string]*GoFunction{
 	"len": {
 		ArgsCount: 1,
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
