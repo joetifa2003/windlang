@@ -85,8 +85,8 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 		},
 	},
 	"replace": {
-		ArgsCount: 3,
-		ArgsTypes: []ObjectType{StringObj, StringObj, StringObj},
+		ArgsCount: 2,
+		ArgsTypes: []ObjectType{StringObj, StringObj},
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
 			old := args[0].(*String)
 			new := args[1].(*String)
@@ -159,6 +159,26 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			return &Integer{
 				Value: int64(strings.LastIndex(this.Value, substr.Value)),
 			}, nil
+		},
+	},
+	"changeAt": {
+		ArgsCount: 2,
+		ArgsTypes: []ObjectType{IntegerObj, StringObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
+			index := args[0].(*Integer)
+			newValue := args[1].(*String)
+
+			if index.Value >= int64(len(this.Value)) {
+				return nil, evaluator.newError(node.Token, "index out of range: got %d max %d", index.Value, len(this.Value)-1)
+			}
+
+			if len(newValue.Value) > 1 {
+				return nil, evaluator.newError(node.Token, "new value can be at most one character")
+			}
+
+			this.Value = this.Value[:index.Value] + newValue.Value + this.Value[index.Value+1:]
+
+			return this, nil
 		},
 	},
 }
