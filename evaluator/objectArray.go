@@ -133,4 +133,24 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			return last, nil
 		},
 	},
+	"contains": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{FunctionObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			fn := args[0].(*Function)
+
+			for _, obj := range this.Value {
+				result, err := evaluator.applyFunction(node, fn, []Object{obj})
+				if err != nil {
+					return nil, err
+				}
+
+				if result == TRUE {
+					return TRUE, nil
+				}
+			}
+
+			return FALSE, nil
+		},
+	},
 }

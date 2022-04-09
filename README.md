@@ -24,18 +24,19 @@
       - [Array.map(function) -> any[]](#arraymapfunction---any)
       - [Array.filter(function) -> any[]](#arrayfilterfunction---any)
       - [Array.reduce(fn(accumulator, element), initialValue) -> any](#arrayreducefnaccumulator-element-initialvalue---any)
+      - [Array.contains(function) -> boolean](#arraycontainsfunction---boolean)
     - [Strings](#strings)
       - [String.len(separator) -> int](#stringlenseparator---int)
       - [String.charAt(index) -> string](#stringcharatindex---string)
-      - [String.contains(substr) -> string](#stringcontainssubstr---string)
-      - [String.containsAny(substr) -> string](#stringcontainsanysubstr---string)
+      - [String.contains(substr) -> boolean](#stringcontainssubstr---boolean)
+      - [String.containsAny(substr) -> boolean](#stringcontainsanysubstr---boolean)
       - [String.count(substr) -> string](#stringcountsubstr---string)
       - [String.replace(old, new) -> string](#stringreplaceold-new---string)
       - [String.replaceAll(old, new) -> string](#stringreplaceallold-new---string)
       - [String.replaceN(old, new, n) -> string](#stringreplacenold-new-n---string)
       - [String.changeAt(index, new) -> string](#stringchangeatindex-new---string)
-      - [String.indexOf(substr) -> string](#stringindexofsubstr---string)
-      - [String.lastIndexOf(substr) -> string](#stringlastindexofsubstr---string)
+      - [String.indexOf(substr) -> int](#stringindexofsubstr---int)
+      - [String.lastIndexOf(substr) -> int](#stringlastindexofsubstr---int)
       - [String.split(separator) -> string[]](#stringsplitseparator---string)
       - [String.trim() -> string](#stringtrim---string)
       - [String.toLowerCase() -> string](#stringtolowercase---string)
@@ -223,6 +224,18 @@ println(sum); // 15
 
 Array reduce function applies the function to each element of the array and returns a single value
 
+#### Array.contains(function) -> boolean
+
+```swift
+let arr = [1, 3, 5];
+println(arr.contains(fn(x) { x % 2 == 0})); // false
+
+arr = [1, 2, 3, 4, 5];
+println(arr.contains(fn(x) { x % 2 == 0})); // true
+```
+
+Array contains function applies the function to each element of the array and returns true if the function returns true for any element
+
 ### Strings
 
 Strings in Wind start and end with a double quote `"` and can contain any character and can be multi-line
@@ -246,7 +259,7 @@ println(name.charAt(0)); // y
 
 String charAt function returns the character at the specified index
 
-#### String.contains(substr) -> string
+#### String.contains(substr) -> boolean
 
 ```swift
 let name = "youssef";
@@ -256,7 +269,7 @@ println(name.contains("ss")); // true
 
 String contains function returns true if the string contains the exact substring
 
-#### String.containsAny(substr) -> string
+#### String.containsAny(substr) -> boolean
 
 ```swift
 let vowels = "aeiou";
@@ -318,7 +331,7 @@ println(name.changeAt(0, "a")); // ahmed
 
 String changeAt function returns a new string after changing the character at the specified index
 
-#### String.indexOf(substr) -> string
+#### String.indexOf(substr) -> int
 
 ```swift
 let name = "John Doe";
@@ -328,7 +341,7 @@ println(name.indexOf("o")); // 1
 
 String indexOf function returns the index of the first occurrence of the substring
 
-#### String.lastIndexOf(substr) -> string
+#### String.lastIndexOf(substr) -> int
 
 ```swift
 let name = "John Doe";
