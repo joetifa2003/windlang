@@ -25,6 +25,7 @@
       - [Array.filter(function) -> any[]](#arrayfilterfunction---any)
       - [Array.reduce(fn(accumulator, element), initialValue) -> any](#arrayreducefnaccumulator-element-initialvalue---any)
       - [Array.contains(function) -> boolean](#arraycontainsfunction---boolean)
+      - [Array.count(function) -> int](#arraycountfunction---int)
     - [Strings](#strings)
       - [String.len(separator) -> int](#stringlenseparator---int)
       - [String.charAt(index) -> string](#stringcharatindex---string)
@@ -235,6 +236,18 @@ println(arr.contains(fn(x) { x % 2 == 0})); // true
 ```
 
 Array contains function applies the function to each element of the array and returns true if the function returns true for any element
+
+#### Array.count(function) -> int
+
+```swift
+let arr = [1, 3, 5];
+println(arr.count(fn(x) { x % 2 == 0})); // 0
+
+arr = [1, 2, 3, 4, 5];
+println(arr.count(fn(x) { x % 2 == 0})); // 2
+```
+
+Array count function applies the function to each element of the array and returns the number of times the function returns true
 
 ### Strings
 

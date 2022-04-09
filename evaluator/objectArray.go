@@ -153,4 +153,27 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			return FALSE, nil
 		},
 	},
+	"count": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{FunctionObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			fn := args[0].(*Function)
+
+			count := 0
+			for _, obj := range this.Value {
+				result, err := evaluator.applyFunction(node, fn, []Object{obj})
+				if err != nil {
+					return nil, err
+				}
+
+				if result == TRUE {
+					count++
+				}
+			}
+
+			return &Integer{
+				Value: int64(count),
+			}, nil
+		},
+	},
 }
