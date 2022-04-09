@@ -191,4 +191,26 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			}, nil
 		},
 	},
+	"removeAt": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{IntegerObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			index := args[0].(*Integer).Value
+
+			if index < 0 || index >= int64(len(this.Value)) {
+				return nil, evaluator.newError(node.Token, "index %d out of bounds", index)
+			}
+
+			newValue := []Object{}
+			for i, v := range this.Value {
+				if i != int(index) {
+					newValue = append(newValue, v)
+				}
+			}
+			removedValue := this.Value[index]
+			this.Value = newValue
+
+			return removedValue, nil
+		},
+	},
 }

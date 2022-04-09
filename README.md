@@ -19,6 +19,7 @@
     - [Arrays](#arrays)
       - [Array.push(element) -> any[]](#arraypushelement---any)
       - [Array.pop() -> any](#arraypop---any)
+      - [Array.removeAt(index) -> any](#arrayremoveatindex---any)
       - [Array.len() -> int](#arraylen---int)
       - [Array.join(separator) -> string](#arrayjoinseparator---string)
       - [Array.map(function) -> any[]](#arraymapfunction---any)
@@ -174,6 +175,18 @@ println(y); // 4
 ```
 
 Array pop function removes the last element of the array and returns it
+
+#### Array.removeAt(index) -> any
+
+```swift
+let x = [1, 2, 3, 4];
+x.push(4); // [1, 2, 3, 4]
+
+let y = x.removeAt(3); // [1, 2, 3]
+println(y); // 4
+```
+
+Array removeAt function removes an element at the index of the array and returns it
 
 #### Array.len() -> int
 
