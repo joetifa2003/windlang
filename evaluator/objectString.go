@@ -7,6 +7,21 @@ import (
 	"github.com/joetifa2003/windlang/ast"
 )
 
+type String struct {
+	Value string
+}
+
+func (s *String) GetFunction(name string) (*GoFunction, bool) {
+	return GetFunctionFromObject(name, s, stringFunctions)
+}
+func (s *String) Type() ObjectType { return StringObj }
+func (s *String) Inspect() string  { return s.Value }
+func (s *String) HashKey() HashKey {
+	algo := fnv.New64a()
+	algo.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: algo.Sum64()}
+}
+
 var stringFunctions = map[string]OwnedFunction[*String]{
 	"len": {
 		ArgsCount: 0,
@@ -146,29 +161,4 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			}, nil
 		},
 	},
-}
-
-type String struct {
-	Value string
-}
-
-func (s *String) GetFunction(name string) (*GoFunction, bool) {
-	if fn, ok := stringFunctions[name]; ok {
-		return &GoFunction{
-			ArgsCount: fn.ArgsCount,
-			ArgsTypes: fn.ArgsTypes,
-			Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
-				return fn.Fn(evaluator, node, s, args...)
-			},
-		}, true
-	}
-
-	return nil, false
-}
-func (s *String) Type() ObjectType { return StringObj }
-func (s *String) Inspect() string  { return s.Value }
-func (s *String) HashKey() HashKey {
-	algo := fnv.New64a()
-	algo.Write([]byte(s.Value))
-	return HashKey{Type: s.Type(), Value: algo.Sum64()}
 }

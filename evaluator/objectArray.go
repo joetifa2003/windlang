@@ -1,0 +1,119 @@
+package evaluator
+
+import (
+	"bytes"
+	"strings"
+
+	"github.com/joetifa2003/windlang/ast"
+)
+
+type Array struct {
+	Value []Object
+}
+
+func (a *Array) GetFunction(name string) (*GoFunction, bool) {
+	return GetFunctionFromObject(name, a, arrayFunctions)
+}
+func (a *Array) Type() ObjectType { return ArrayObj }
+func (a *Array) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+	for _, obj := range a.Value {
+		out.WriteString(obj.Inspect())
+		out.WriteString(",")
+	}
+	out.WriteString("]")
+
+	return out.String()
+}
+
+var arrayFunctions = map[string]OwnedFunction[*Array]{
+	"len": {
+		ArgsCount: 0,
+		ArgsTypes: []ObjectType{},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			return &Integer{
+				Value: int64(len(this.Value)),
+			}, nil
+		},
+	},
+	"join": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{StringObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			strArr := []string{}
+			for _, obj := range this.Value {
+				strArr = append(strArr, obj.Inspect())
+			}
+
+			return &String{
+				Value: strings.Join(strArr, args[0].(*String).Value),
+			}, nil
+		},
+	},
+	"filter": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{FunctionObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			fn := args[0].(*Function)
+
+			filtered := []Object{}
+			for _, obj := range this.Value {
+				result, err := evaluator.applyFunction(node, fn, []Object{obj})
+				if err != nil {
+					return nil, err
+				}
+
+				if result == TRUE {
+					filtered = append(filtered, obj)
+				}
+			}
+
+			return &Array{
+				Value: filtered,
+			}, nil
+		},
+	},
+	"map": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{FunctionObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			fn := args[0].(*Function)
+
+			mapped := []Object{}
+			for _, obj := range this.Value {
+				result, err := evaluator.applyFunction(node, fn, []Object{obj})
+				if err != nil {
+					return nil, err
+				}
+
+				mapped = append(mapped, result)
+			}
+
+			return &Array{
+				Value: mapped,
+			}, nil
+		},
+	},
+	"reduce": {
+		ArgsCount: 2,
+		ArgsTypes: []ObjectType{FunctionObj, Any},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			fn := args[0].(*Function)
+			initial := args[1]
+
+			accumulator := initial
+			for _, obj := range this.Value {
+				result, err := evaluator.applyFunction(node, fn, []Object{accumulator, obj})
+				if err != nil {
+					return nil, err
+				}
+
+				accumulator = result
+			}
+
+			return accumulator, nil
+		},
+	},
+}

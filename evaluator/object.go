@@ -72,6 +72,20 @@ type WithFunctions interface {
 	GetFunction(name string) (*GoFunction, bool)
 }
 
+func GetFunctionFromObject[T Object](name string, object T, functions map[string]OwnedFunction[T]) (*GoFunction, bool) {
+	if fn, ok := functions[name]; ok {
+		return &GoFunction{
+			ArgsCount: fn.ArgsCount,
+			ArgsTypes: fn.ArgsTypes,
+			Fn: func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error) {
+				return fn.Fn(evaluator, node, object, args...)
+			},
+		}, true
+	}
+
+	return nil, false
+}
+
 type Hashable interface {
 	HashKey() HashKey
 }
@@ -168,24 +182,6 @@ type GoFunction struct {
 
 func (b *GoFunction) Type() ObjectType { return BuiltinObj }
 func (b *GoFunction) Inspect() string  { return "builtin function" }
-
-type Array struct {
-	Value []Object
-}
-
-func (a *Array) Type() ObjectType { return ArrayObj }
-func (a *Array) Inspect() string {
-	var out bytes.Buffer
-
-	out.WriteString("[")
-	for _, obj := range a.Value {
-		out.WriteString(obj.Inspect())
-		out.WriteString(",")
-	}
-	out.WriteString("]")
-
-	return out.String()
-}
 
 type Hash struct {
 	Pairs map[HashKey]Object
