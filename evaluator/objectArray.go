@@ -116,4 +116,21 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			return accumulator, nil
 		},
 	},
+	"push": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{Any},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			this.Value = append(this.Value, args[0])
+			return this, nil
+		},
+	},
+	"pop": {
+		ArgsCount: 0,
+		ArgsTypes: []ObjectType{},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			last := this.Value[len(this.Value)-1]
+			this.Value = this.Value[:len(this.Value)-1]
+			return last, nil
+		},
+	},
 }
