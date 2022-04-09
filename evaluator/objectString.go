@@ -176,9 +176,9 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 				return nil, evaluator.newError(node.Token, "new value can be at most one character")
 			}
 
-			this.Value = this.Value[:index.Value] + newValue.Value + this.Value[index.Value+1:]
-
-			return this, nil
+			return &String{
+				Value: this.Value[:index.Value] + newValue.Value + this.Value[index.Value+1:],
+			}, nil
 		},
 	},
 	"trim": {
@@ -187,6 +187,24 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
 			return &String{
 				Value: strings.TrimSpace(this.Value),
+			}, nil
+		},
+	},
+	"split": {
+		ArgsCount: 1,
+		ArgsTypes: []ObjectType{StringObj},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
+			seperator := args[0].(*String)
+
+			strArr := strings.Split(this.Value, seperator.Value)
+			objArr := []Object{}
+
+			for _, str := range strArr {
+				objArr = append(objArr, &String{Value: str})
+			}
+
+			return &Array{
+				Value: objArr,
 			}, nil
 		},
 	},
