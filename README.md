@@ -17,6 +17,13 @@
     - [Variables](#variables)
     - [Data types](#data-types)
     - [Arrays](#arrays)
+      - [Array.push(element)](#arraypushelement)
+      - [Array.pop()](#arraypop)
+      - [Array.len()](#arraylen)
+      - [Array.join(separator)](#arrayjoinseparator)
+      - [Array.map(function)](#arraymapfunction)
+      - [Array.filter(function)](#arrayfilterfunction)
+      - [Array.reduce(fn(accumulator, element), initialValue)](#arrayreducefnaccumulator-element-initialvalue)
     - [Functions](#functions)
     - [Closures](#closures)
     - [If expressions](#if-expressions)
@@ -104,6 +111,10 @@ true, false    // boolean
 nil            // null
 "Hello World"  // String
 [1, "2", true] // Arrays
+{
+    "name": "Youssef",
+    "age": 18
+}              // HashMaps
 ```
 
 ### Arrays
@@ -115,13 +126,42 @@ println(arr[0]); // 1
 println(arr[1]); // 2
 println(arr[2]); // true
 
-append(arr, "3") // [1, "2", true, "3"]
+arr.push("3") // [1, "2", true, "3"]
 println(arr[3]); // 3
+arr.pop()     // [1, "2", true]
 ```
 
 Arrays in Wind can take any type of data, and can be of any size
 You can append to an array by using the `append` function
 You can remove an element by index using the `remove` function.
+
+#### Array.push(element)
+
+Array push function adds an element to the end of the array
+
+#### Array.pop()
+
+Array pop function removes the last element of the array and returns it
+
+#### Array.len()
+
+Array len function returns the length of the array
+
+#### Array.join(separator)
+
+Array join function returns a string with all the elements of the array separated by the separator
+
+#### Array.map(function)
+
+Array map function applies the function to each element of the array and returns a new array with the results
+
+#### Array.filter(function)
+
+Array filter function applies the function to each element of the array and if the function returns true, the element is added to the new array
+
+#### Array.reduce(fn(accumulator, element), initialValue)
+
+Array reduce function applies the function to each element of the array and returns a single value
 
 ### Functions
 
