@@ -17,13 +17,29 @@
     - [Variables](#variables)
     - [Data types](#data-types)
     - [Arrays](#arrays)
-      - [Array.push(element)](#arraypushelement)
-      - [Array.pop()](#arraypop)
-      - [Array.len()](#arraylen)
-      - [Array.join(separator)](#arrayjoinseparator)
-      - [Array.map(function)](#arraymapfunction)
-      - [Array.filter(function)](#arrayfilterfunction)
-      - [Array.reduce(fn(accumulator, element), initialValue)](#arrayreducefnaccumulator-element-initialvalue)
+      - [Array.push(element) -> any[]](#arraypushelement---any)
+      - [Array.pop() -> any](#arraypop---any)
+      - [Array.len() -> int](#arraylen---int)
+      - [Array.join(separator) -> string](#arrayjoinseparator---string)
+      - [Array.map(function) -> any[]](#arraymapfunction---any)
+      - [Array.filter(function) -> any[]](#arrayfilterfunction---any)
+      - [Array.reduce(fn(accumulator, element), initialValue) -> any](#arrayreducefnaccumulator-element-initialvalue---any)
+    - [Strings](#strings)
+      - [String.len(separator) -> int](#stringlenseparator---int)
+      - [String.charAt(index) -> string](#stringcharatindex---string)
+      - [String.contains(substr) -> string](#stringcontainssubstr---string)
+      - [String.containsAny(substr) -> string](#stringcontainsanysubstr---string)
+      - [String.count(substr) -> string](#stringcountsubstr---string)
+      - [String.replace(old, new) -> string](#stringreplaceold-new---string)
+      - [String.replaceAll(old, new) -> string](#stringreplaceallold-new---string)
+      - [String.replaceN(old, new, n) -> string](#stringreplacenold-new-n---string)
+      - [String.changeAt(index, new) -> string](#stringchangeatindex-new---string)
+      - [String.indexOf(substr) -> string](#stringindexofsubstr---string)
+      - [String.lastIndexOf(substr) -> string](#stringlastindexofsubstr---string)
+      - [String.split(separator) -> string[]](#stringsplitseparator---string)
+      - [String.trim() -> string](#stringtrim---string)
+      - [String.toLowerCase() -> string](#stringtolowercase---string)
+      - [String.toUpperCase() -> string](#stringtouppercase---string)
     - [Functions](#functions)
     - [Closures](#closures)
     - [If expressions](#if-expressions)
@@ -135,33 +151,236 @@ Arrays in Wind can take any type of data, and can be of any size
 You can append to an array by using the `append` function
 You can remove an element by index using the `remove` function.
 
-#### Array.push(element)
+#### Array.push(element) -> any[]
+
+```swift
+let x = [1, 2, 3];
+x.push(4) // [1, 2, 3, 4]
+```
 
 Array push function adds an element to the end of the array
 
-#### Array.pop()
+#### Array.pop() -> any
+
+```swift
+let x = [1, 2, 3, 4];
+x.push(4); // [1, 2, 3, 4]
+
+let y = x.pop(); // [1, 2, 3]
+println(y); // 4
+```
 
 Array pop function removes the last element of the array and returns it
 
-#### Array.len()
+#### Array.len() -> int
+
+```swift
+let x = [1, "hi", true];
+println(x.len()); // 3
+```
 
 Array len function returns the length of the array
 
-#### Array.join(separator)
+#### Array.join(separator) -> string
+
+```swift
+let x = [1, "hi", 3, 4];
+
+println(x.join("-")); // 1-hi-3-4
+```
 
 Array join function returns a string with all the elements of the array separated by the separator
 
-#### Array.map(function)
+#### Array.map(function) -> any[]
+
+```swift
+let x = [1, 2, 3];
+
+println(x.map(fn(x) {x * 2})); // [2, 4, 6]
+```
 
 Array map function applies the function to each element of the array and returns a new array with the results
 
-#### Array.filter(function)
+#### Array.filter(function) -> any[]
+
+```swift
+let x = [1, 2, 3, 4];
+let even = x.filter(fn(x) { x % 2 == 0});
+
+println(even); // [2, 4]]
+```
 
 Array filter function applies the function to each element of the array and if the function returns true, the element is added to the new array
 
-#### Array.reduce(fn(accumulator, element), initialValue)
+#### Array.reduce(fn(accumulator, element), initialValue) -> any
+
+```swift
+let x = [1, 2, 3, 4, 5];
+let sum = x.reduce(fn(acc, x) { acc + x}, 0);
+
+println(sum); // 15
+```
 
 Array reduce function applies the function to each element of the array and returns a single value
+
+### Strings
+
+Strings in Wind start and end with a double quote `"` and can contain any character and can be multi-line
+
+#### String.len(separator) -> int
+
+```swift
+let x = "Hello";
+
+println(x.len()); // 5
+```
+
+String len function returns the length of the string
+
+#### String.charAt(index) -> string
+
+```swift
+let name = "youssef";
+println(name.charAt(0)); // y
+```
+
+String charAt function returns the character at the specified index
+
+#### String.contains(substr) -> string
+
+```swift
+let name = "youssef";
+
+println(name.contains("ss")); // true
+```
+
+String contains function returns true if the string contains the exact substring
+
+#### String.containsAny(substr) -> string
+
+```swift
+let vowels = "aeiou";
+let name = "youssef";
+
+println(name.contains(vowels)); // true
+```
+
+String contains function returns true if the string contains any character of the substring
+
+#### String.count(substr) -> string
+
+```swift
+let name = "youssef";
+
+println(name.count("s")); // 2
+```
+
+String count function returns the number of times the substring appears in the string
+
+#### String.replace(old, new) -> string
+
+```swift
+let name = "John Doe";
+
+println(name.replace("o", "x")); // Jxhn Doe
+```
+
+String replace function returns a new string after replacing one old substring with a new substring
+
+#### String.replaceAll(old, new) -> string
+
+```swift
+let name = "John Doe";
+
+println(name.replaceAll("o", "x")); // Jxhn Dxe
+```
+
+String replace function returns a new string after replacing all old substring with a new substring
+
+#### String.replaceN(old, new, n) -> string
+
+```swift
+let name = "Youssef";
+
+println(name.replaceN("s", "x", 1)); // Youxsef
+println(name.replaceN("s", "x", 2)); // Youxxef
+```
+
+String replace function returns a new string after replacing n of old substring with a new substring
+
+#### String.changeAt(index, new) -> string
+
+```swift
+let name = "Ahmed";
+
+println(name.changeAt(0, "a")); // ahmed
+```
+
+String changeAt function returns a new string after changing the character at the specified index
+
+#### String.indexOf(substr) -> string
+
+```swift
+let name = "John Doe";
+
+println(name.indexOf("o")); // 1
+```
+
+String indexOf function returns the index of the first occurrence of the substring
+
+#### String.lastIndexOf(substr) -> string
+
+```swift
+let name = "John Doe";
+
+println(name.lastIndexOf("o")); // 6
+```
+
+String indexOf function returns the index of the last occurrence of the substring
+
+#### String.split(separator) -> string[]
+
+```swift
+let name = "Youssef Ahmed";
+let names = name.split(" "); // ["Youssef", "Ahmed"]
+let firstName = names[0];
+let lastName = names[1];
+
+println("First name is: " + firstName); // First name is: Youssef
+println("Last name is: " + lastName); // Last name is: Ahmed
+```
+
+String join function returns an array of strings by splitting the string by the separator
+
+#### String.trim() -> string
+
+```swift
+let name = " John Doe   ";
+
+println(name.trim()); // "John Doe"
+```
+
+String trim function removes whitespace from the start/end of the string and returns a new string
+
+#### String.toLowerCase() -> string
+
+```swift
+let name = "JoHn dOe";
+
+println(name.toLowerCase()); // john doe
+```
+
+String toLowerCase function returns a new string with all the characters in lower case
+
+#### String.toUpperCase() -> string
+
+```swift
+let name = "JoHn dOe";
+
+println(name.toUpperCase()); // JOHN DOE
+```
+
+String toLowerCase function returns a new string with all the characters in upper case
 
 ### Functions
 
