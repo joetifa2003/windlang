@@ -181,4 +181,13 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			return this, nil
 		},
 	},
+	"trim": {
+		ArgsCount: 0,
+		ArgsTypes: []ObjectType{},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
+			return &String{
+				Value: strings.TrimSpace(this.Value),
+			}, nil
+		},
+	},
 }
