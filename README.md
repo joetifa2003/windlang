@@ -26,6 +26,7 @@
       - [Array.reduce(fn(accumulator, element), initialValue) -> any](#arrayreducefnaccumulator-element-initialvalue---any)
       - [Array.contains(function) -> boolean](#arraycontainsfunction---boolean)
       - [Array.count(function) -> int](#arraycountfunction---int)
+      - [Array.clone() -> any[]](#arrayclone---any)
     - [Strings](#strings)
       - [String.len(separator) -> int](#stringlenseparator---int)
       - [String.charAt(index) -> string](#stringcharatindex---string)
@@ -248,6 +249,20 @@ println(arr.count(fn(x) { x % 2 == 0})); // 2
 ```
 
 Array count function applies the function to each element of the array and returns the number of times the function returns true
+
+#### Array.clone() -> any[]
+
+```swift
+let x = [1, 2, 3];
+let notCloned = x;
+let cloned = x.clone();
+
+x[0] = "changed";
+println(notCloned[0]); // Changed
+println(cloned[0]); // 1
+```
+
+Array clone function returns a copy of the array
 
 ### Strings
 

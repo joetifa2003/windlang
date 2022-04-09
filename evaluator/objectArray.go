@@ -176,4 +176,19 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			}, nil
 		},
 	},
+	"clone": {
+		ArgsCount: 0,
+		ArgsTypes: []ObjectType{},
+		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
+			newValue := make([]Object, len(this.Value))
+
+			for i, obj := range this.Value {
+				newValue[i] = obj
+			}
+
+			return &Array{
+				Value: newValue,
+			}, nil
+		},
+	},
 }
