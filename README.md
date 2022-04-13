@@ -316,7 +316,7 @@ String contains function returns true if the string contains the exact substring
 let vowels = "aeiou";
 let name = "youssef";
 
-println(name.contains(vowels)); // true
+println(name.containsAny(vowels)); // true
 ```
 
 String contains function returns true if the string contains any character of the substring
