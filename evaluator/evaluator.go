@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"sync"
 
 	"github.com/joetifa2003/windlang/ast"
 	"github.com/joetifa2003/windlang/lexer"
@@ -19,20 +18,14 @@ var (
 )
 
 type Evaluator struct {
-	envManager   *EnvironmentManager
-	filePath     string
-	intConstants sync.Pool
+	envManager *EnvironmentManager
+	filePath   string
 }
 
 func New(envManager *EnvironmentManager, filePath string) *Evaluator {
 	return &Evaluator{
 		envManager: envManager,
 		filePath:   filePath,
-		intConstants: sync.Pool{
-			New: func() any {
-				return &Integer{}
-			},
-		},
 	}
 }
 
@@ -834,9 +827,5 @@ func boolToBoolObject(value bool) *Boolean {
 func isReturn(obj Object) bool {
 	rt := obj.Type()
 
-	if rt == ReturnValueObj {
-		return true
-	}
-
-	return false
+	return rt == ReturnValueObj
 }

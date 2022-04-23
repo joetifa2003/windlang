@@ -96,8 +96,7 @@ type HashKey struct {
 }
 
 type Integer struct {
-	Constant bool
-	Value    int64
+	Value int64
 }
 
 func (i *Integer) Type() ObjectType { return IntegerObj }
@@ -210,5 +209,5 @@ type IncludeObject struct {
 
 func (i *IncludeObject) Type() ObjectType { return IncludeObj }
 func (i *IncludeObject) Inspect() string {
-	return "inclide_OBJ"
+	return "include_OBJ"
 }
