@@ -153,6 +153,7 @@ type Function struct {
 	Parameters []*ast.Identifier
 	Body       *ast.BlockStatement
 	Env        *Environment
+	This       Object
 }
 
 func (f *Function) Type() ObjectType { return FunctionObj }

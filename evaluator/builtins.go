@@ -41,6 +41,8 @@ var builtins = map[string]*GoFunction{
 			switch arg := args[0].(type) {
 			case *Integer:
 				return &String{Value: fmt.Sprintf("%d", arg.Value)}, nil
+			case *Float:
+				return &String{Value: fmt.Sprintf("%f", arg.Value)}, nil
 			}
 
 			return nil, evaluator.newError(node.Token, "argument to `string` not supported")

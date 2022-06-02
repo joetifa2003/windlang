@@ -52,7 +52,7 @@ var runCmd = &cobra.Command{
 		envManager := evaluator.NewEnvironmentManager()
 		env, _ := envManager.Get(filePath)
 		ev := evaluator.New(envManager, filePath)
-		evaluated, evErr := ev.Eval(program, env)
+		evaluated, evErr := ev.Eval(program, env, nil)
 		if evErr != nil {
 			fmt.Println(evErr.Inspect())
 		}

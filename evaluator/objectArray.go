@@ -182,9 +182,7 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
 			newValue := make([]Object, len(this.Value))
 
-			for i, obj := range this.Value {
-				newValue[i] = obj
-			}
+			copy(this.Value, newValue)
 
 			return &Array{
 				Value: newValue,

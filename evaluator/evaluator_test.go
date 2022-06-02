@@ -393,5 +393,5 @@ func testEval(input string) (Object, *Error) {
 	env, _ := envManager.Get(fileName)
 	evaluator := New(envManager, fileName)
 
-	return evaluator.Eval(program, env)
+	return evaluator.Eval(program, env, nil)
 }
