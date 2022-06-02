@@ -55,6 +55,22 @@ func New(l *lexer.Lexer, filePath string) *Parser {
 	return &p
 }
 
+func (p *Parser) ParseProgram() *ast.Program {
+	program := ast.Program{
+		Statements: []ast.Statement{},
+	}
+
+	for p.curToken.Type != token.EOF {
+		statement := p.parseStatement()
+
+		if statement != nil {
+			program.Statements = append(program.Statements, statement)
+		}
+	}
+
+	return &program
+}
+
 func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 	switch tokenType {
 	case token.EQ, token.NOT_EQ:
@@ -135,26 +151,10 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.lexer.NextToken()
 }
 
-func (p *Parser) ParseProgram() *ast.Program {
-	program := ast.Program{
-		Statements: []ast.Statement{},
-	}
-
-	for p.curToken.Type != token.EOF {
-		statement := p.parseStatement()
-
-		if statement != nil {
-			program.Statements = append(program.Statements, statement)
-		}
-	}
-
-	return &program
-}
-
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
+	case token.LET, token.CONST:
+		return p.parseVarStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.FOR:
@@ -165,13 +165,16 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIncludeStatement()
 	case token.WHILE:
 		return p.parseWhileStatement()
+	// case token.CONST:
+	// 	return p.parseConstStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
 }
 
-func (p *Parser) parseLetStatement() ast.Statement {
+func (p *Parser) parseVarStatement() ast.Statement {
 	stmt := ast.LetStatement{Token: p.curToken}
+	stmt.Constant = p.curToken.Type == token.CONST
 
 	p.nextToken()
 

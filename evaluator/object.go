@@ -68,7 +68,7 @@ type OwnedFunction[T Object] struct {
 	Fn        func(evaluator *Evaluator, node *ast.CallExpression, this T, args ...Object) (Object, *Error)
 }
 
-type WithFunctions interface {
+type ObjectWithFunctions interface {
 	GetFunction(name string) (*GoFunction, bool)
 }
 

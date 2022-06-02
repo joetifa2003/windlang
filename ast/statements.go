@@ -32,9 +32,10 @@ func (p Program) String() string {
 type LetStatement struct {
 	Statement
 
-	Token token.Token // the token.LET token
-	Name  *Identifier
-	Value Expression
+	Token    token.Token // the token.LET token
+	Name     *Identifier
+	Value    Expression
+	Constant bool
 }
 
 func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }

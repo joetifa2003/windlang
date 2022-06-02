@@ -184,7 +184,11 @@ func (e *Evaluator) evalLetStatement(node *ast.LetStatement, env *Environment) (
 		return nil, err
 	}
 
-	env.Let(node.Name.Value, val)
+	if node.Constant {
+		env.LetConstant(node.Name.Value, val)
+	} else {
+		env.Let(node.Name.Value, val)
+	}
 
 	return NIL, nil
 }
@@ -608,7 +612,7 @@ func (e *Evaluator) evalIndexExpression(node *ast.IndexExpression, env *Environm
 	case *IncludeObject:
 		return e.evalIncludeIndexExpression(node, left, index)
 
-	case WithFunctions:
+	case ObjectWithFunctions:
 		return e.evalWithFunctionsIndexExpression(node, left, index)
 
 	default:
@@ -680,7 +684,7 @@ func (e *Evaluator) evalIncludeIndexExpression(node *ast.IndexExpression, includ
 	return obj, nil
 }
 
-func (e *Evaluator) evalWithFunctionsIndexExpression(node *ast.IndexExpression, obj WithFunctions, index Object) (Object, *Error) {
+func (e *Evaluator) evalWithFunctionsIndexExpression(node *ast.IndexExpression, obj ObjectWithFunctions, index Object) (Object, *Error) {
 	name, ok := index.(*String)
 	if !ok {
 		return nil, e.newError(node.Token, "cannot use %s as an index", index.Type().String())
@@ -712,10 +716,14 @@ func (e *Evaluator) evalAssignExpression(node *ast.AssignExpression, env *Enviro
 		return e.evalAssingIndexExpression(node, left, val, env)
 	}
 
-	return val, nil
+	return nil, e.newError(node.Token, "cannot assign to %s", node.Name.String())
 }
 
 func (e *Evaluator) evalAssingIdentifierExpression(node *ast.AssignExpression, left *ast.Identifier, val Object, env *Environment) (Object, *Error) {
+	if env.IsConstant(left.Value) {
+		return nil, e.newError(node.Token, "cannot assign to a constant variable %s", left.Value)
+	}
+
 	_, ok := env.Set(left.Value, val)
 	if !ok {
 		return nil, e.newError(node.Token, "identifier not found: "+left.Value)

@@ -47,6 +47,7 @@ const (
 	// Keywords
 	FUNCTION
 	LET
+	CONST
 	TRUE
 	FALSE
 	IF

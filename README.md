@@ -120,7 +120,7 @@ x = "Hello world";
 println(x); // Hello World
 ```
 
-You can declare variables in Wind with the `let` keyword, Variables in wind are dynamically typed and u can reassign them to any type.
+You can declare variables in Wind with the `let` keyword, Variables in wind are dynamically typed and you can reassign them to any type.
 
 ### Data types
 

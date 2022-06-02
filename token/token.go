@@ -20,6 +20,8 @@ func isKeyword(ident string) (TokenType, bool) {
 		return FUNCTION, true
 	case "let":
 		return LET, true
+	case "const":
+		return CONST, true
 	case "true":
 		return TRUE, true
 	case "false":
