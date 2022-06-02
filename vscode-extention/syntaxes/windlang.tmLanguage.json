@@ -29,7 +29,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.windlang",
-                    "match": "(true|false|if|while|for|return|include|let|fn|as|const)"
+                    "match": "(true|false|if|while|for|return|include|let|fn|as|const|this)"
                 }
             ]
         },
