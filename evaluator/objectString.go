@@ -19,7 +19,7 @@ func (s *String) Inspect() string  { return s.Value }
 func (s *String) HashKey() HashKey {
 	algo := fnv.New64a()
 	algo.Write([]byte(s.Value))
-	return HashKey{Type: s.Type(), Value: algo.Sum64()}
+	return HashKey{Type: s.Type(), Value: algo.Sum64(), InspectValue: s.Inspect()}
 }
 
 var stringFunctions = map[string]OwnedFunction[*String]{

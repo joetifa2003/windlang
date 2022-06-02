@@ -3,6 +3,7 @@ package evaluator
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/joetifa2003/windlang/ast"
@@ -91,8 +92,13 @@ type Hashable interface {
 }
 
 type HashKey struct {
-	Type  ObjectType
-	Value uint64
+	Type         ObjectType
+	Value        uint64
+	InspectValue string
+}
+
+func (hk *HashKey) Inspect() string {
+	return hk.InspectValue
 }
 
 type Integer struct {
@@ -127,7 +133,7 @@ func (b *Boolean) HashKey() HashKey {
 		val = 2
 	}
 
-	return HashKey{Type: b.Type(), Value: val}
+	return HashKey{Type: b.Type(), Value: val, InspectValue: b.Inspect()}
 }
 
 type Nil struct{}
@@ -193,7 +199,8 @@ func (h *Hash) Inspect() string {
 
 	out.WriteString("{")
 
-	for _, value := range h.Pairs {
+	for key, value := range h.Pairs {
+		out.WriteString(key.Inspect())
 		out.WriteString(": ")
 		out.WriteString(value.Inspect())
 		out.WriteString(", ")
@@ -211,4 +218,35 @@ type IncludeObject struct {
 func (i *IncludeObject) Type() ObjectType { return IncludeObj }
 func (i *IncludeObject) Inspect() string {
 	return "include_OBJ"
+}
+
+func GetObjectFromInterFace(v interface{}) Object {
+	switch v := v.(type) {
+	case float64:
+		if v == math.Trunc(v) {
+			return &Integer{Value: int64(v)}
+		} else {
+			return &Float{Value: v}
+		}
+
+	case string:
+		return &String{Value: v}
+
+	case bool:
+		if v {
+			return TRUE
+		} else {
+			return FALSE
+		}
+
+	case []interface{}:
+		res := make([]Object, len(v))
+		for i, val := range v {
+			res[i] = GetObjectFromInterFace(val)
+		}
+
+		return &Array{Value: res}
+	}
+
+	return NIL
 }

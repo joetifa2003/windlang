@@ -6,6 +6,9 @@ func GetStdlib(filePath string) (*Environment, bool) {
 	switch filePath {
 	case "math":
 		return getLibrary("math", stdLibMath), true
+
+	case "request":
+		return getLibrary("request", stdLibReq), true
 	}
 
 	return nil, false
