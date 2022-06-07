@@ -216,6 +216,10 @@ func TestHashLiterals(t *testing.T) {
 			`let x = { "foo": { "bar": fn() { return { "baz": 1 }; } } }; x.foo.bar().baz`,
 			&Integer{Value: 1},
 		},
+		{
+			`let x = { "value": 1, "incrementValue": fn() { this.value++ } }; x.incrementValue(); x.value`,
+			&Integer{Value: 2},
+		},
 	}
 
 	for _, tc := range tests {
@@ -378,6 +382,96 @@ func TestArrayIndex(t *testing.T) {
 
 	for _, tc := range tests {
 		evaluated, err := testEval(tc.input)
+		assert.Nil(err)
+		assert.IsType(tc.expected, evaluated)
+		assert.Equal(tc.expected, evaluated)
+	}
+}
+
+func TestForLoop(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		input    string
+		expected Object
+	}{
+		{
+			`
+			let x = 0;
+
+			for (let i = 0; i < 5; i++) {
+			    x = x + 1;
+			}
+
+			x
+			`,
+			&Integer{Value: 5},
+		},
+	}
+
+	for _, tc := range tests {
+		evaluated, err := testEval(tc.input)
+		assert.Nil(err)
+		assert.IsType(tc.expected, evaluated)
+		assert.Equal(tc.expected, evaluated)
+	}
+}
+
+func TestWhileLoop(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		input    string
+		expected Object
+	}{
+		{
+			`
+			let x = 0;
+
+			while (x < 5) {
+				x = x + 1;
+			}
+			
+			x
+			`,
+			&Integer{Value: 5},
+		},
+	}
+
+	for _, tc := range tests {
+		evaluated, err := testEval(tc.input)
+		assert.Nil(err)
+		assert.IsType(tc.expected, evaluated)
+		assert.Equal(tc.expected, evaluated)
+	}
+}
+
+func TestRecursion(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		input    string
+		expected Object
+	}{
+		{
+			`
+			let multiply = fn(n, m) {
+				if (m == 0) {
+					return 0;
+				}
+
+				return n + multiply(n, m - 1);
+			};
+			multiply(2, 3);
+			`,
+			&Integer{Value: 6},
+		},
+	}
+
+	for _, tc := range tests {
+		evaluated, err := testEval(
+			tc.input,
+		)
 		assert.Nil(err)
 		assert.IsType(tc.expected, evaluated)
 		assert.Equal(tc.expected, evaluated)
