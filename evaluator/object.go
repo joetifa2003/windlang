@@ -61,6 +61,7 @@ func (ot ObjectType) String() string {
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+	Clone() Object
 }
 
 type OwnedFunction[T Object] struct {
@@ -110,6 +111,9 @@ func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
+func (i Integer) Clone() Object {
+	return &i
+}
 
 type Float struct {
 	Value float64
@@ -117,6 +121,9 @@ type Float struct {
 
 func (f *Float) Type() ObjectType { return FloatObj }
 func (f *Float) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
+func (f Float) Clone() Object {
+	return &f
+}
 
 type Boolean struct {
 	Value bool
@@ -135,11 +142,17 @@ func (b *Boolean) HashKey() HashKey {
 
 	return HashKey{Type: b.Type(), Value: val, InspectValue: b.Inspect()}
 }
+func (b Boolean) Clone() Object {
+	return &b
+}
 
 type Nil struct{}
 
 func (n *Nil) Type() ObjectType { return NilObj }
 func (n *Nil) Inspect() string  { return "nil" }
+func (n Nil) Clone() Object {
+	return &n
+}
 
 type ReturnValue struct {
 	Value Object
@@ -147,6 +160,9 @@ type ReturnValue struct {
 
 func (rv *ReturnValue) Type() ObjectType { return ReturnValueObj }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
+func (rv ReturnValue) Clone() Object {
+	return &rv
+}
 
 type Error struct {
 	Message string
@@ -175,7 +191,11 @@ func (f *Function) Inspect() string {
 	out.WriteString(") {\n")
 	out.WriteString(f.Body.String())
 	out.WriteString("\n}")
+
 	return out.String()
+}
+func (f Function) Clone() Object {
+	return &f
 }
 
 type BuiltinFunction func(evaluator *Evaluator, node *ast.CallExpression, args ...Object) (Object, *Error)
@@ -188,6 +208,9 @@ type GoFunction struct {
 
 func (b *GoFunction) Type() ObjectType { return BuiltinObj }
 func (b *GoFunction) Inspect() string  { return "builtin function" }
+func (b GoFunction) Clone() Object {
+	return &b
+}
 
 type Hash struct {
 	Pairs map[HashKey]Object
@@ -210,6 +233,9 @@ func (h *Hash) Inspect() string {
 
 	return out.String()
 }
+func (h Hash) Clone() Object {
+	return &h
+}
 
 type IncludeObject struct {
 	Value *Environment
@@ -218,6 +244,9 @@ type IncludeObject struct {
 func (i *IncludeObject) Type() ObjectType { return IncludeObj }
 func (i *IncludeObject) Inspect() string {
 	return "include_OBJ"
+}
+func (i IncludeObject) Clone() Object {
+	return &i
 }
 
 func GetObjectFromInterFace(v interface{}) Object {

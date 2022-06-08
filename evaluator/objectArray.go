@@ -27,6 +27,9 @@ func (a *Array) Inspect() string {
 
 	return out.String()
 }
+func (a Array) Clone() Object {
+	return &a
+}
 
 var arrayFunctions = map[string]OwnedFunction[*Array]{
 	"len": {
@@ -120,7 +123,7 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 		ArgsCount: 1,
 		ArgsTypes: []ObjectType{Any},
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
-			this.Value = append(this.Value, args[0])
+			this.Value = append(this.Value, args[0].Clone())
 			return this, nil
 		},
 	},

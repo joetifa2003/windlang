@@ -21,6 +21,9 @@ func (s *String) HashKey() HashKey {
 	algo.Write([]byte(s.Value))
 	return HashKey{Type: s.Type(), Value: algo.Sum64(), InspectValue: s.Inspect()}
 }
+func (s String) Clone() Object {
+	return &s
+}
 
 var stringFunctions = map[string]OwnedFunction[*String]{
 	"len": {
