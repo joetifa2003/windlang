@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "main.go",
             "env": {},
-            "args": ["run", "main.wind"]
+            "args": ["vm", "main.wind"]
         }
     ]
 }

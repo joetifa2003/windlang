@@ -58,6 +58,8 @@ const (
 	AS
 	WHILE
 	NIL
+	BREAK
+	CONTINUE
 )
 
 func (t *TokenType) String() string {
@@ -136,6 +138,10 @@ func (t *TokenType) String() string {
 		return "AS"
 	case DOTDOT:
 		return "DOTDOT"
+	case BREAK:
+		return "BREAK"
+	case CONTINUE:
+		return "CONTINUE"
 	default:
 		return "UNKNOWN"
 	}

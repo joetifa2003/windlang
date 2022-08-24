@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,7 +15,7 @@ import (
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run [file]",
-	Short: "Run a Wind script",
+	Short: "Run a Wind script using Tree Walking interpreter",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("requires 1 argument")
@@ -30,7 +29,7 @@ var runCmd = &cobra.Command{
 			log.Fatal("File path is required")
 		}
 
-		file, err := ioutil.ReadFile(filePath)
+		file, err := os.ReadFile(filePath)
 		if err != nil {
 			log.Fatalln("Could not read file:", err)
 			return

@@ -42,7 +42,10 @@ func isKeyword(ident string) (TokenType, bool) {
 		return NIL, true
 	case "as":
 		return AS, true
-
+	case "break":
+		return BREAK, true
+	case "continue":
+		return CONTINUE, true
 	}
 
 	return IDENT, false

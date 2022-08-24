@@ -165,8 +165,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIncludeStatement()
 	case token.WHILE:
 		return p.parseWhileStatement()
-	// case token.CONST:
-	// 	return p.parseConstStatement()
+	// case token.BREAK:
+	// 	return p.parseBreakStatement()
+	// case token.CONTINUE:
+	// 	return p.parseContinueStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
