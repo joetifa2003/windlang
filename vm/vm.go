@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"fmt"
+
 	"github.com/joetifa2003/windlang/opcode"
 	"github.com/joetifa2003/windlang/value"
 )
@@ -11,12 +13,11 @@ type VM struct {
 }
 
 func NewVM() VM {
+	stack := NewStack()
 	envStack := NewEnvironmentStack()
 
 	return VM{
-		Stack: Stack{
-			Value: make([]value.Value, 2048),
-		},
+		Stack:    stack,
 		EnvStack: envStack,
 	}
 }
@@ -147,9 +148,14 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 			v.Stack.push(value)
 
 		case opcode.PopOpCode:
-			if len(v.Stack.Value) != 0 {
+			if v.Stack.P != 0 {
 				v.Stack.pop()
 			}
+
+		case opcode.EchoOpCode:
+			operand := v.Stack.pop()
+
+			fmt.Println(operand.String())
 
 		default:
 			panic("Unimplemented OpCode")

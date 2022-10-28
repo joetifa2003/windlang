@@ -2,11 +2,12 @@ package value
 
 import "fmt"
 
-type ValueType int
+type ValueType byte
 
 const (
 	VALUE_INT ValueType = iota
 	VALUE_BOOL
+	VALUE_NIL
 )
 
 type Value interface {
@@ -23,3 +24,8 @@ type BoolValue struct{ Value bool }
 
 func (BoolValue) ValueType() ValueType { return VALUE_BOOL }
 func (b BoolValue) String() string     { return fmt.Sprint(b.Value) }
+
+type NilValue struct{}
+
+func (NilValue) ValueType() ValueType { return VALUE_NIL }
+func (NilValue) String() string       { return "nil" }

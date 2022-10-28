@@ -60,6 +60,7 @@ const (
 	NIL
 	BREAK
 	CONTINUE
+	ECHO
 )
 
 func (t *TokenType) String() string {
@@ -142,6 +143,8 @@ func (t *TokenType) String() string {
 		return "BREAK"
 	case CONTINUE:
 		return "CONTINUE"
+	case ECHO:
+		return "ECHO"
 	default:
 		return "UNKNOWN"
 	}

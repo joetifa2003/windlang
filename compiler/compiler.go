@@ -105,10 +105,12 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		condition := c.Compile(node.Condition)
 		thenBranch := c.Compile(node.ThenBranch)
 		removeLastPop(&thenBranch)
+		nilIfNoValue(&thenBranch)
 		elseBranch := []opcode.OpCode{}
 		if node.ElseBranch != nil {
 			elseBranch = c.Compile(node.ElseBranch)
 			removeLastPop(&elseBranch)
+			nilIfNoValue(&elseBranch)
 		}
 
 		instructions = append(instructions, condition...)
@@ -202,6 +204,17 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		return instructions
 
+	case *ast.EchoStatement:
+		var instructions []opcode.OpCode
+
+		instructions = append(instructions, c.Compile(node.Value)...)
+		instructions = append(instructions, opcode.EchoOpCode{})
+
+		return instructions
+
+	case *ast.NilLiteral:
+		return []opcode.OpCode{opcode.ConstOpCode{Value: value.NilValue{}}}
+
 	default:
 		panic("Unimplemented Ast %d")
 	}
@@ -228,6 +241,21 @@ func removeLastPop(instructions *[]opcode.OpCode) {
 		_, ok := (*instructions)[instructionsLen-2].(opcode.PopOpCode)
 		if ok {
 			(*instructions) = removeIndex(*instructions, instructionsLen-2)
+		}
+	}
+}
+
+func nilIfNoValue(instructions *[]opcode.OpCode) {
+	instructionsLen := len(*instructions)
+	lastInstruction := (*instructions)[instructionsLen-1]
+
+	if _, ok := lastInstruction.(opcode.EndBlockOpCode); ok {
+		beforeLastInstruction := (*instructions)[instructionsLen-2]
+
+		if _, ok := beforeLastInstruction.(opcode.ConstOpCode); !ok {
+			(*instructions) = removeIndex(*instructions, instructionsLen-1)
+			*instructions = append(*instructions, opcode.ConstOpCode{Value: value.NilValue{}})
+			*instructions = append(*instructions, opcode.EndBlockOpCode{})
 		}
 	}
 }

@@ -154,3 +154,13 @@ func (ws *WhileStatement) TokenLiteral() string { return ws.Token.Literal }
 func (ws *WhileStatement) String() string {
 	return ""
 }
+
+type EchoStatement struct {
+	Statement
+
+	Token token.Token
+	Value Expression
+}
+
+func (es *EchoStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *EchoStatement) String() string       { return "" }

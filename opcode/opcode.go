@@ -26,6 +26,7 @@ const (
 	OP_SET
 	OP_GET
 	OP_POP
+	OP_ECHO
 )
 
 type OpCode interface {
@@ -123,3 +124,8 @@ type PopOpCode struct{}
 
 func (PopOpCode) String() string { return "POP" }
 func (PopOpCode) Type() OpType   { return OP_POP }
+
+type EchoOpCode struct{}
+
+func (EchoOpCode) String() string { return "ECHO" }
+func (EchoOpCode) Type() OpType   { return OP_ECHO }

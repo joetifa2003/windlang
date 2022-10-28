@@ -169,6 +169,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	// 	return p.parseBreakStatement()
 	// case token.CONTINUE:
 	// 	return p.parseContinueStatement()
+	case token.ECHO:
+		return p.parseEchoStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -261,7 +263,7 @@ func (p *Parser) parseIncludeStatement() *ast.IncludeStatement {
 
 	p.nextToken()
 
-	if strings.Contains(p.curToken.Literal, "./") || strings.Contains(p.curToken.Literal, "./") {
+	if strings.Contains(p.curToken.Literal, "./") {
 		stmt.Path = filepath.Join(filepath.Dir(p.filePath), p.curToken.Literal)
 	} else {
 		stmt.Path = p.curToken.Literal
@@ -296,6 +298,18 @@ func (p *Parser) parseWhileStatement() *ast.WhileStatement {
 	p.expectCurrent(token.RPAREN)
 
 	stmt.Body = p.parseBlockStatement()
+
+	return &stmt
+}
+
+func (p *Parser) parseEchoStatement() *ast.EchoStatement {
+	stmt := ast.EchoStatement{Token: p.curToken}
+
+	p.nextToken()
+
+	stmt.Value = p.parseExpression(LOWEST)
+
+	p.expectCurrent(token.SEMICOLON)
 
 	return &stmt
 }

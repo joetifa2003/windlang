@@ -36,7 +36,7 @@ var vmCommand = &cobra.Command{
 			return
 		}
 
-		// defer profile.Start(profile.MemProfile).Stop()
+		// defer profile.Start().Stop()
 		input := string(file)
 		lexer := lexer.New(input)
 		parser := parser.New(lexer, filePath)

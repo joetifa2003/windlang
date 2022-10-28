@@ -46,6 +46,8 @@ func isKeyword(ident string) (TokenType, bool) {
 		return BREAK, true
 	case "continue":
 		return CONTINUE, true
+	case "echo":
+		return ECHO, true
 	}
 
 	return IDENT, false

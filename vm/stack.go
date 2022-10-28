@@ -7,6 +7,12 @@ type Stack struct {
 	P     int
 }
 
+func NewStack() Stack {
+	return Stack{
+		Value: make([]value.Value, 2048),
+	}
+}
+
 func (s *Stack) pop() value.Value {
 	lastEle := (s.Value)[s.P-1]
 	(s.Value)[s.P-1] = nil
