@@ -15,7 +15,7 @@ func NewStack() Stack {
 
 func (s *Stack) pop() value.Value {
 	lastEle := (s.Value)[s.P-1]
-	(s.Value)[s.P-1] = nil
+	(s.Value)[s.P-1] = value.NewNilValue()
 	s.P--
 	return lastEle
 }

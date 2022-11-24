@@ -58,7 +58,7 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment, this Object) (Object, 
 
 	// Expressions
 	case *ast.IntegerLiteral:
-		return &Integer{Value: node.Value}, nil
+		return Integer{Value: node.Value}, nil
 
 	case *ast.FloatLiteral:
 		return &Float{Value: node.Value}, nil
@@ -104,6 +104,14 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment, this Object) (Object, 
 
 	case *ast.HashLiteral:
 		return e.evalHashLiteral(node, env)
+
+	case *ast.EchoStatement:
+		val, err := e.Eval(node.Value, env, this)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println(val.Inspect())
 	}
 
 	return NIL, nil
@@ -407,8 +415,8 @@ func (e *Evaluator) evalBangOperatorExpression(node *ast.PrefixExpression, right
 
 func (e *Evaluator) evalMinusPrefixOperatorExpression(node *ast.PrefixExpression, right Object) (Object, *Error) {
 	switch right := right.(type) {
-	case *Integer:
-		return &Integer{Value: -right.Value}, nil
+	case Integer:
+		return Integer{Value: -right.Value}, nil
 	case *Float:
 		return &Float{Value: -right.Value}, nil
 	default:
@@ -429,8 +437,8 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environm
 
 	switch {
 	case left.Type() == IntegerObj && right.Type() == IntegerObj:
-		leftVal := left.(*Integer).Value
-		rightVal := right.(*Integer).Value
+		leftVal := left.(Integer).Value
+		rightVal := right.(Integer).Value
 
 		return e.evalIntegerInfixExpression(node, node.Operator, leftVal, rightVal)
 
@@ -442,12 +450,12 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environm
 
 	case left.Type() == FloatObj && right.Type() == IntegerObj:
 		leftVal := left.(*Float).Value
-		rightVal := right.(*Integer).Value
+		rightVal := right.(Integer).Value
 
 		return e.evalFloatInfixExpression(node, node.Operator, leftVal, float64(rightVal))
 
 	case left.Type() == IntegerObj && right.Type() == FloatObj:
-		leftVal := left.(*Integer).Value
+		leftVal := left.(Integer).Value
 		rightVal := right.(*Float).Value
 
 		return e.evalFloatInfixExpression(node, node.Operator, float64(leftVal), rightVal)
@@ -473,7 +481,7 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *Environm
 	}
 }
 
-func (e *Evaluator) evalIntegerInfixExpression(node *ast.InfixExpression, operator string, left, right int64) (Object, *Error) {
+func (e *Evaluator) evalIntegerInfixExpression(node *ast.InfixExpression, operator string, left, right int) (Object, *Error) {
 	switch operator {
 	case "<":
 		return boolToBoolObject(left < right), nil
@@ -488,15 +496,15 @@ func (e *Evaluator) evalIntegerInfixExpression(node *ast.InfixExpression, operat
 	case "!=":
 		return boolToBoolObject(left != right), nil
 	case "+":
-		return &Integer{Value: left + right}, nil
+		return Integer{Value: left + right}, nil
 	case "-":
-		return &Integer{Value: left - right}, nil
+		return Integer{Value: left - right}, nil
 	case "*":
-		return &Integer{Value: left * right}, nil
+		return Integer{Value: left * right}, nil
 	case "/":
-		return &Integer{Value: left / right}, nil
+		return Integer{Value: left / right}, nil
 	case "%":
-		return &Integer{Value: left % right}, nil
+		return Integer{Value: left % right}, nil
 	default:
 		return nil, e.newError(node.Token, "unknown operator: %d %s %d",
 			left, operator, right)
@@ -650,8 +658,8 @@ func (e *Evaluator) evalHashLiteral(node *ast.HashLiteral, env *Environment) (Ob
 }
 
 func (e *Evaluator) evalArrayIndexExpression(node *ast.IndexExpression, array *Array, index Object) (Object, *Error) {
-	idx := index.(*Integer).Value
-	max := int64(len(array.Value) - 1)
+	idx := index.(Integer).Value
+	max := len(array.Value) - 1
 
 	if idx < 0 || idx > max {
 		return NIL, nil
@@ -758,8 +766,8 @@ func (e *Evaluator) evalAssingIndexExpression(node *ast.AssignExpression, left *
 }
 
 func (e *Evaluator) evalAssingArrayIndexExpression(node *ast.AssignExpression, leftObj *Array, index Object, val Object) (Object, *Error) {
-	idx := index.(*Integer).Value
-	max := int64(len(leftObj.Value) - 1)
+	idx := index.(Integer).Value
+	max := len(leftObj.Value) - 1
 
 	if idx < 0 || idx > max {
 		return nil, e.newError(node.Token, "index out of bounds")
@@ -788,14 +796,14 @@ func (e *Evaluator) evalPostfixExpression(node *ast.PostfixExpression, env *Envi
 	}
 
 	switch left := left.(type) {
-	case *Integer:
+	case Integer:
 		return e.evalPostfixIntegerExpression(node, node.Operator, left)
 	default:
 		return nil, e.newError(node.Token, "postfix operator not supported: %s", left.Inspect())
 	}
 }
 
-func (e *Evaluator) evalPostfixIntegerExpression(node *ast.PostfixExpression, operator string, left *Integer) (Object, *Error) {
+func (e *Evaluator) evalPostfixIntegerExpression(node *ast.PostfixExpression, operator string, left Integer) (Object, *Error) {
 	switch operator {
 	case "++":
 		left.Value++

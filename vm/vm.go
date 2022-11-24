@@ -8,157 +8,184 @@ import (
 )
 
 type VM struct {
-	Stack    Stack
-	EnvStack EnvironmentStack
+	Stack     Stack
+	EnvStack  EnvironmentStack
+	Constants []value.Value
 }
 
-func NewVM() VM {
+func NewVM(constants []value.Value) VM {
 	stack := NewStack()
 	envStack := NewEnvironmentStack()
 
 	return VM{
-		Stack:    stack,
-		EnvStack: envStack,
+		Stack:     stack,
+		EnvStack:  envStack,
+		Constants: constants,
 	}
 }
 
 func (v *VM) Interpret(instructions []opcode.OpCode) {
 	ip := 0
 	for ip < len(instructions) {
-		curInstruction := instructions[ip]
-		switch instruction := curInstruction.(type) {
-		case opcode.ConstOpCode:
-			v.Stack.push(instruction.Value)
+		switch instructions[ip] {
+		case opcode.OP_CONST:
+			ip++
+			value := v.Constants[instructions[ip]]
 
-		case opcode.AddOpCode:
+			v.Stack.push(value)
+
+		case opcode.OP_ADD:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.IntegerValue{Value: leftInt.Value + rightInt.Value})
+				v.Stack.push(value.NewIntValue(leftInt + rightInt))
 			}
 
-		case opcode.SubtractOpCode:
+		case opcode.OP_SUBTRACT:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.IntegerValue{Value: leftInt.Value - rightInt.Value})
+				v.Stack.push(value.NewIntValue(leftInt - rightInt))
 			}
 
-		case opcode.MultiplyOpCode:
+		case opcode.OP_MULTIPLY:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.IntegerValue{Value: leftInt.Value * rightInt.Value})
+				v.Stack.push(value.NewIntValue(leftInt * rightInt))
 			}
 
-		case opcode.ModuloOpCode:
+		case opcode.OP_MODULO:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.IntegerValue{Value: leftInt.Value % rightInt.Value})
+				v.Stack.push(value.NewIntValue(leftInt % rightInt))
 			}
 
-		case opcode.DivideOpCode:
+		case opcode.OP_DIVIDE:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.IntegerValue{Value: leftInt.Value / rightInt.Value})
+				v.Stack.push(value.NewIntValue(leftInt / rightInt))
 			}
 
-		case opcode.EqualOpCode:
+		case opcode.OP_EQ:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.BoolValue{Value: leftInt.Value == rightInt.Value})
+				v.Stack.push(value.NewBoolValue(leftInt == rightInt))
 			}
 
-		case opcode.LessThanEqOpCode:
+		case opcode.OP_LESSEQ:
 			right := v.Stack.pop()
 			left := v.Stack.pop()
 
 			switch {
-			case left.ValueType() == value.VALUE_INT && right.ValueType() == value.VALUE_INT:
-				leftInt := left.(value.IntegerValue)
-				rightInt := right.(value.IntegerValue)
+			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
+				leftInt := left.IntV
+				rightInt := right.IntV
 
-				v.Stack.push(value.BoolValue{Value: leftInt.Value <= rightInt.Value})
+				v.Stack.push(value.NewBoolValue(leftInt <= rightInt))
 			}
 
-		case opcode.JumpFalseOpCode:
+		case opcode.OP_JUMP_FALSE:
 			operand := v.Stack.pop()
+			ip++
+			offset := int(instructions[ip])
 
 			if !isTruthy(operand) {
-				ip += instruction.Offset
+				ip += offset
 
 				continue
 			}
 
-		case opcode.JumpOpCode:
-			ip += instruction.Offset
+		case opcode.OP_JUMP:
+			ip++
+			offset := int(instructions[ip])
+
+			ip += offset
 
 			continue
 
-		case opcode.BlockOpCode:
-			v.EnvStack.push(NewEnvironment(instruction.VarCount))
+		case opcode.OP_BLOCK:
+			ip++
+			varCount := int(instructions[ip])
 
-		case opcode.EndBlockOpCode:
+			v.EnvStack.push(NewEnvironment(varCount))
+
+		case opcode.OP_END_BLOCK:
 			v.EnvStack.pop()
 
-		case opcode.LetOpCode:
+		case opcode.OP_LET:
 			value := v.Stack.pop()
-			v.EnvStack.let(instruction.Index, value)
 
-		case opcode.SetOpCode:
+			ip++
+			index := int(instructions[ip])
+
+			v.EnvStack.let(index, value)
+
+		case opcode.OP_SET:
 			value := v.Stack.pop()
-			newVal := v.EnvStack.set(instruction.ScopeIndex, instruction.Index, value)
+
+			ip++
+			index := int(instructions[ip])
+			ip++
+			scopeIndex := int(instructions[ip])
+
+			newVal := v.EnvStack.set(scopeIndex, index, value)
 			v.Stack.push(newVal)
 
-		case opcode.GetOpCode:
-			value := v.EnvStack.get(instruction.ScopeIndex, instruction.Index)
+		case opcode.OP_GET:
+			ip++
+			index := int(instructions[ip])
+			ip++
+			scopeIndex := int(instructions[ip])
+
+			value := v.EnvStack.get(scopeIndex, index)
 			v.Stack.push(value)
 
-		case opcode.PopOpCode:
+		case opcode.OP_POP:
 			if v.Stack.P != 0 {
 				v.Stack.pop()
 			}
 
-		case opcode.EchoOpCode:
+		case opcode.OP_ECHO:
 			operand := v.Stack.pop()
 
 			fmt.Println(operand.String())
 
 		default:
-			panic("Unimplemented OpCode")
+			panic("Unimplemented OpCode " + fmt.Sprint(instructions[ip]))
 		}
 
 		ip++
@@ -166,9 +193,9 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 }
 
 func isTruthy(input value.Value) bool {
-	switch input := input.(type) {
-	case value.BoolValue:
-		return input.Value
+	switch input.VType {
+	case value.VALUE_BOOL:
+		return input.BoolV
 	default:
 		return true
 	}

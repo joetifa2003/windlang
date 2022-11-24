@@ -7,9 +7,9 @@ import (
 
 	"github.com/joetifa2003/windlang/compiler"
 	"github.com/joetifa2003/windlang/lexer"
-	"github.com/joetifa2003/windlang/opcode"
 	"github.com/joetifa2003/windlang/parser"
 	"github.com/joetifa2003/windlang/vm"
+	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ var vmCommand = &cobra.Command{
 			return
 		}
 
-		// defer profile.Start().Stop()
+		defer profile.Start().Stop()
 		input := string(file)
 		lexer := lexer.New(input)
 		parser := parser.New(lexer, filePath)
@@ -53,40 +53,8 @@ var vmCommand = &cobra.Command{
 		compiler := compiler.NewCompiler()
 		instructions := compiler.Compile(program)
 
-		if debug {
-			indent := 0
-			for _, instruction := range instructions {
-				switch instruction.(type) {
-				case opcode.EndBlockOpCode:
-					indent -= 1
-				}
-
-				for i := 0; i < indent; i++ {
-					fmt.Print("    ")
-				}
-
-				switch instruction.(type) {
-				case opcode.BlockOpCode:
-					indent += 1
-				}
-
-				fmt.Println(instruction)
-			}
-		}
-
-		virtualM := vm.NewVM()
+		virtualM := vm.NewVM(compiler.Constants)
 		virtualM.Interpret(instructions)
-
-		if debug {
-			fmt.Print("[")
-			for _, v := range virtualM.Stack.Value {
-				if v != nil {
-					fmt.Printf("%s ", v)
-				}
-			}
-			fmt.Println("]")
-			fmt.Println(virtualM.Stack.P)
-		}
 	},
 }
 

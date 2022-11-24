@@ -103,12 +103,12 @@ func (hk *HashKey) Inspect() string {
 }
 
 type Integer struct {
-	Value int64
+	Value int
 }
 
-func (i *Integer) Type() ObjectType { return IntegerObj }
-func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
-func (i *Integer) HashKey() HashKey {
+func (i Integer) Type() ObjectType { return IntegerObj }
+func (i Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
+func (i Integer) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 func (i Integer) Clone() Object {
@@ -253,7 +253,7 @@ func GetObjectFromInterFace(v interface{}) Object {
 	switch v := v.(type) {
 	case float64:
 		if v == math.Trunc(v) {
-			return &Integer{Value: int64(v)}
+			return &Integer{Value: int(v)}
 		} else {
 			return &Float{Value: v}
 		}

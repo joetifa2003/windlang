@@ -2,7 +2,7 @@ package value
 
 import "fmt"
 
-type ValueType byte
+type ValueType int
 
 const (
 	VALUE_INT ValueType = iota
@@ -10,22 +10,41 @@ const (
 	VALUE_NIL
 )
 
-type Value interface {
-	ValueType() ValueType
-	String() string
+type Value struct {
+	VType ValueType
+	IntV  int
+	BoolV bool
 }
 
-type IntegerValue struct{ Value int64 }
+func (v Value) String() string {
+	switch v.VType {
+	case VALUE_INT:
+		return fmt.Sprint(v.IntV)
+	case VALUE_BOOL:
+		return fmt.Sprint(v.BoolV)
+	case VALUE_NIL:
+		return "nil"
+	}
 
-func (IntegerValue) ValueType() ValueType { return VALUE_INT }
-func (i IntegerValue) String() string     { return fmt.Sprint(i.Value) }
+	panic("Unimplemented String() for value type")
+}
 
-type BoolValue struct{ Value bool }
+func NewNilValue() Value {
+	return Value{
+		VType: VALUE_NIL,
+	}
+}
 
-func (BoolValue) ValueType() ValueType { return VALUE_BOOL }
-func (b BoolValue) String() string     { return fmt.Sprint(b.Value) }
+func NewIntValue(v int) Value {
+	return Value{
+		VType: VALUE_INT,
+		IntV:  v,
+	}
+}
 
-type NilValue struct{}
-
-func (NilValue) ValueType() ValueType { return VALUE_NIL }
-func (NilValue) String() string       { return "nil" }
+func NewBoolValue(v bool) Value {
+	return Value{
+		VType: VALUE_BOOL,
+		BoolV: v,
+	}
+}

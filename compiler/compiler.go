@@ -7,13 +7,21 @@ import (
 )
 
 type Compiler struct {
-	Scopes [][]string
+	Scopes    [][]string
+	Constants []value.Value
 }
 
 func NewCompiler() Compiler {
 	return Compiler{
-		Scopes: [][]string{},
+		Scopes:    [][]string{},
+		Constants: []value.Value{},
 	}
+}
+
+func (c *Compiler) addConstant(v value.Value) int {
+	c.Constants = append(c.Constants, v)
+
+	return len(c.Constants) - 1
 }
 
 func (c *Compiler) beginScope() {
@@ -56,15 +64,16 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		programInstructions := append(instructions, c.CompileProgram(node.Statements)...)
 		scope := c.endScope()
 
-		instructions = append(instructions, opcode.BlockOpCode{VarCount: len(scope)})
+		instructions = append(instructions, opcode.OP_BLOCK)
+		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, programInstructions...)
-		instructions = append(instructions, opcode.EndBlockOpCode{})
+		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
 	case *ast.ExpressionStatement:
 		expr := c.Compile(node.Expression)
-		expr = append(expr, opcode.PopOpCode{})
+		expr = append(expr, opcode.OP_POP)
 
 		return expr
 
@@ -79,22 +88,22 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		switch node.Operator {
 		case "+":
-			instructions = append(instructions, opcode.AddOpCode{})
+			instructions = append(instructions, opcode.OP_ADD)
 		case "-":
-			instructions = append(instructions, opcode.SubtractOpCode{})
+			instructions = append(instructions, opcode.OP_SUBTRACT)
 		case "*":
-			instructions = append(instructions, opcode.MultiplyOpCode{})
+			instructions = append(instructions, opcode.OP_MULTIPLY)
 		case "/":
-			instructions = append(instructions, opcode.DivideOpCode{})
+			instructions = append(instructions, opcode.OP_DIVIDE)
 		case "<=":
-			instructions = append(instructions, opcode.LessThanEqOpCode{})
+			instructions = append(instructions, opcode.OP_LESSEQ)
 		case "%":
-			instructions = append(instructions, opcode.ModuloOpCode{})
+			instructions = append(instructions, opcode.OP_MODULO)
 		case "==":
-			instructions = append(instructions, opcode.EqualOpCode{})
+			instructions = append(instructions, opcode.OP_EQ)
 
 		default:
-			panic("Unimplemented operator")
+			panic("Unimplemented operator " + node.Operator)
 		}
 
 		return instructions
@@ -104,28 +113,36 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		condition := c.Compile(node.Condition)
 		thenBranch := c.Compile(node.ThenBranch)
-		removeLastPop(&thenBranch)
-		nilIfNoValue(&thenBranch)
 		elseBranch := []opcode.OpCode{}
 		if node.ElseBranch != nil {
 			elseBranch = c.Compile(node.ElseBranch)
-			removeLastPop(&elseBranch)
-			nilIfNoValue(&elseBranch)
 		}
 
 		instructions = append(instructions, condition...)
-		instructions = append(instructions, opcode.JumpFalseOpCode{Offset: len(thenBranch) + 2})
+		instructions = append(instructions, opcode.OP_JUMP_FALSE)
+		instructions = append(instructions, opcode.OpCode(len(thenBranch)+3))
 		instructions = append(instructions, thenBranch...)
-		instructions = append(instructions, opcode.JumpOpCode{Offset: len(elseBranch) + 1})
+		instructions = append(instructions, opcode.OP_JUMP)
+		instructions = append(instructions, opcode.OpCode(len(elseBranch)+1))
 		instructions = append(instructions, elseBranch...)
 
 		return instructions
 
 	case *ast.IntegerLiteral:
-		return []opcode.OpCode{opcode.ConstOpCode{Value: value.IntegerValue{Value: node.Value}}}
+		return []opcode.OpCode{
+			opcode.OP_CONST,
+			opcode.OpCode(
+				c.addConstant(value.NewIntValue(node.Value)),
+			),
+		}
 
 	case *ast.Boolean:
-		return []opcode.OpCode{opcode.ConstOpCode{Value: value.BoolValue{Value: node.Value}}}
+		return []opcode.OpCode{
+			opcode.OP_CONST,
+			opcode.OpCode(
+				c.addConstant(value.NewBoolValue(node.Value)),
+			),
+		}
 
 	case *ast.BlockStatement:
 		var instructions []opcode.OpCode
@@ -137,9 +154,10 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		}
 		scope := c.endScope()
 
-		instructions = append(instructions, opcode.BlockOpCode{VarCount: len(scope)})
+		instructions = append(instructions, opcode.OP_BLOCK)
+		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, bodyInstructions...)
-		instructions = append(instructions, opcode.EndBlockOpCode{})
+		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
@@ -150,9 +168,11 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		body := c.Compile(node.Body)
 
 		instructions = append(instructions, condition...)
-		instructions = append(instructions, opcode.JumpFalseOpCode{Offset: len(body) + 2})
+		instructions = append(instructions, opcode.OP_JUMP_FALSE)
+		instructions = append(instructions, opcode.OpCode(len(body)+2))
 		instructions = append(instructions, body...)
-		instructions = append(instructions, opcode.JumpOpCode{Offset: -len(body) - len(condition) - 1})
+		instructions = append(instructions, opcode.OP_JUMP)
+		instructions = append(instructions, opcode.OpCode(-len(body)-len(condition)-1))
 
 		return instructions
 
@@ -165,19 +185,22 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		condition := c.Compile(node.Condition)
 		body := c.Compile(node.Body)
 		increment := c.Compile(node.Increment)
-		increment = append(increment, opcode.PopOpCode{})
+		increment = append(increment, opcode.OP_POP)
 		scope := c.endScope()
 
 		bodyInstructions = append(bodyInstructions, initializer...)
 		bodyInstructions = append(bodyInstructions, condition...)
-		bodyInstructions = append(bodyInstructions, opcode.JumpFalseOpCode{Offset: len(body) + len(increment) + 2})
+		bodyInstructions = append(bodyInstructions, opcode.OP_JUMP_FALSE)
+		bodyInstructions = append(bodyInstructions, opcode.OpCode(len(body)+len(increment)+3))
 		bodyInstructions = append(bodyInstructions, body...)
 		bodyInstructions = append(bodyInstructions, increment...)
-		bodyInstructions = append(bodyInstructions, opcode.JumpOpCode{Offset: -len(body) - len(increment) - len(condition) - 1})
+		bodyInstructions = append(bodyInstructions, opcode.OP_JUMP)
+		bodyInstructions = append(bodyInstructions, opcode.OpCode(-len(body)-len(increment)-len(condition)-3))
 
-		instructions = append(instructions, opcode.BlockOpCode{VarCount: len(scope)})
+		instructions = append(instructions, opcode.OP_BLOCK)
+		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, bodyInstructions...)
-		instructions = append(instructions, opcode.EndBlockOpCode{})
+		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
@@ -187,20 +210,21 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		value := c.Compile(node.Value)
 		index := c.addToScope(node.Name.Value)
 		instructions = append(instructions, value...)
-		instructions = append(instructions, opcode.LetOpCode{Index: index})
+		instructions = append(instructions, opcode.OP_LET)
+		instructions = append(instructions, opcode.OpCode(index))
 
 		return instructions
 
 	case *ast.Identifier:
 		offset, index := c.findInScope(node.Value)
-		return []opcode.OpCode{opcode.GetOpCode{Index: index, ScopeIndex: offset}}
+		return []opcode.OpCode{opcode.OP_GET, opcode.OpCode(index), opcode.OpCode(offset)}
 
 	case *ast.AssignExpression:
 		var instructions []opcode.OpCode
 		offset, index := c.findInScope(node.Name.TokenLiteral())
 		value := c.Compile(node.Value)
 		instructions = append(instructions, value...)
-		instructions = append(instructions, opcode.SetOpCode{Index: index, ScopeIndex: offset})
+		instructions = append(instructions, opcode.OP_SET, opcode.OpCode(index), opcode.OpCode(offset))
 
 		return instructions
 
@@ -208,12 +232,12 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		var instructions []opcode.OpCode
 
 		instructions = append(instructions, c.Compile(node.Value)...)
-		instructions = append(instructions, opcode.EchoOpCode{})
+		instructions = append(instructions, opcode.OP_ECHO)
 
 		return instructions
 
 	case *ast.NilLiteral:
-		return []opcode.OpCode{opcode.ConstOpCode{Value: value.NilValue{}}}
+		return []opcode.OpCode{opcode.OP_CONST, opcode.OpCode(c.addConstant(value.NewNilValue()))}
 
 	default:
 		panic("Unimplemented Ast %d")
@@ -227,39 +251,4 @@ func (c *Compiler) CompileProgram(statements []ast.Statement) []opcode.OpCode {
 	}
 
 	return instructions
-}
-
-func removeLastPop(instructions *[]opcode.OpCode) {
-	instructionsLen := len((*instructions))
-	lastInstruction := (*instructions)[instructionsLen-1]
-
-	switch lastInstruction.(type) {
-	case opcode.PopOpCode:
-		*instructions = (*instructions)[:instructionsLen-1]
-
-	case opcode.EndBlockOpCode:
-		_, ok := (*instructions)[instructionsLen-2].(opcode.PopOpCode)
-		if ok {
-			(*instructions) = removeIndex(*instructions, instructionsLen-2)
-		}
-	}
-}
-
-func nilIfNoValue(instructions *[]opcode.OpCode) {
-	instructionsLen := len(*instructions)
-	lastInstruction := (*instructions)[instructionsLen-1]
-
-	if _, ok := lastInstruction.(opcode.EndBlockOpCode); ok {
-		beforeLastInstruction := (*instructions)[instructionsLen-2]
-
-		if _, ok := beforeLastInstruction.(opcode.ConstOpCode); !ok {
-			(*instructions) = removeIndex(*instructions, instructionsLen-1)
-			*instructions = append(*instructions, opcode.ConstOpCode{Value: value.NilValue{}})
-			*instructions = append(*instructions, opcode.EndBlockOpCode{})
-		}
-	}
-}
-
-func removeIndex[T any](s []T, index int) []T {
-	return append(s[:index], s[index+1:]...)
 }

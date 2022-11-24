@@ -21,7 +21,7 @@ type IntegerLiteral struct {
 	Expression
 
 	Token token.Token
-	Value int64
+	Value int
 }
 
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }

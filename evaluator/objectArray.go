@@ -37,7 +37,7 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 		ArgsTypes: []ObjectType{},
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
 			return &Integer{
-				Value: int64(len(this.Value)),
+				Value: len(this.Value),
 			}, nil
 		},
 	},
@@ -175,7 +175,7 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 			}
 
 			return &Integer{
-				Value: int64(count),
+				Value: int(count),
 			}, nil
 		},
 	},
@@ -198,7 +198,7 @@ var arrayFunctions = map[string]OwnedFunction[*Array]{
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *Array, args ...Object) (Object, *Error) {
 			index := args[0].(*Integer).Value
 
-			if index < 0 || index >= int64(len(this.Value)) {
+			if index < 0 || index >= len(this.Value) {
 				return nil, evaluator.newError(node.Token, "index %d out of bounds", index)
 			}
 

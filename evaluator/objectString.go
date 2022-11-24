@@ -31,7 +31,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 		ArgsTypes: []ObjectType{},
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
 			return &Integer{
-				Value: int64(len(this.Value)),
+				Value: len(this.Value),
 			}, nil
 		},
 	},
@@ -41,7 +41,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 		Fn: func(evaluator *Evaluator, node *ast.CallExpression, this *String, args ...Object) (Object, *Error) {
 			index := args[0].(*Integer)
 
-			if index.Value >= int64(len(this.Value)) {
+			if index.Value >= len(this.Value) {
 				return NIL, nil
 			}
 
@@ -83,7 +83,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			substr := args[0].(*String)
 
 			return &Integer{
-				Value: int64(strings.Count(this.Value, substr.Value)),
+				Value: strings.Count(this.Value, substr.Value),
 			}, nil
 		},
 	},
@@ -149,7 +149,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			substr := args[0].(*String)
 
 			return &Integer{
-				Value: int64(strings.Index(this.Value, substr.Value)),
+				Value: strings.Index(this.Value, substr.Value),
 			}, nil
 		},
 	},
@@ -160,7 +160,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			substr := args[0].(*String)
 
 			return &Integer{
-				Value: int64(strings.LastIndex(this.Value, substr.Value)),
+				Value: strings.LastIndex(this.Value, substr.Value),
 			}, nil
 		},
 	},
@@ -171,7 +171,7 @@ var stringFunctions = map[string]OwnedFunction[*String]{
 			index := args[0].(*Integer)
 			newValue := args[1].(*String)
 
-			if index.Value >= int64(len(this.Value)) {
+			if index.Value >= len(this.Value) {
 				return nil, evaluator.newError(node.Token, "index out of range: got %d max %d", index.Value, len(this.Value)-1)
 			}
 

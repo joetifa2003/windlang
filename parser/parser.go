@@ -366,7 +366,7 @@ func (p *Parser) parseIdentifier() ast.Expression {
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
 	integer := ast.IntegerLiteral{Token: p.curToken}
-	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	value, err := strconv.Atoi(p.curToken.Literal)
 
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
