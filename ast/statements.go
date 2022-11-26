@@ -95,6 +95,7 @@ type BlockStatement struct {
 
 	Token      token.Token // the { token
 	Statements []Statement
+	VarCount   int
 }
 
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }

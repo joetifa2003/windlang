@@ -9,7 +9,6 @@ import (
 	"github.com/joetifa2003/windlang/lexer"
 	"github.com/joetifa2003/windlang/parser"
 	"github.com/joetifa2003/windlang/vm"
-	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +35,7 @@ var vmCommand = &cobra.Command{
 			return
 		}
 
-		defer profile.Start().Stop()
+		// defer profile.Start().Stop()
 		input := string(file)
 		lexer := lexer.New(input)
 		parser := parser.New(lexer, filePath)

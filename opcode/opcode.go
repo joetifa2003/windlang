@@ -12,20 +12,15 @@ const (
 	OP_MODULO
 	OP_LESS
 	OP_LESSEQ
-	// args: [index]
-	OP_LET
+	OP_LET // args: [index]
 	OP_EQ
-	// args: [offset]
-	OP_JUMP_FALSE
-	// args: [offset]
-	OP_JUMP
-	// args: [N of variables]
-	OP_BLOCK
+	OP_JUMP_FALSE // args: [offset]
+	OP_JUMP       // args: [offset]
+	OP_BLOCK      // args: [N of variables]
 	OP_END_BLOCK
-	// args: [index, scope index]
-	OP_SET
-	// args: [index, scope index]
-	OP_GET
+	OP_SET // args: [index, scope index]
+	OP_GET // args: [index, scope index]
 	OP_POP
 	OP_ECHO
+	OP_ARRAY // args: [n of elements]
 )

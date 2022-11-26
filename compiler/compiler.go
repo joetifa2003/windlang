@@ -45,9 +45,9 @@ func (c *Compiler) addToScope(name string) int {
 // returns scope index and the value index inside it
 func (c *Compiler) findInScope(name string) (int, int) {
 	for scopesIndex := len(c.Scopes) - 1; scopesIndex >= 0; scopesIndex-- {
-		for scopeIndex, v := range c.Scopes[scopesIndex] {
+		for valueIndex, v := range c.Scopes[scopesIndex] {
 			if v == name {
-				return scopesIndex, scopeIndex
+				return scopesIndex, valueIndex
 			}
 		}
 	}
@@ -148,18 +148,26 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		var instructions []opcode.OpCode
 		var bodyInstructions []opcode.OpCode
 
-		c.beginScope()
-		for _, stmt := range node.Statements {
-			bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
+		if node.VarCount != 0 {
+			c.beginScope()
+			for _, stmt := range node.Statements {
+				bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
+			}
+			scope := c.endScope()
+
+			instructions = append(instructions, opcode.OP_BLOCK)
+			instructions = append(instructions, opcode.OpCode(len(scope)))
+			instructions = append(instructions, bodyInstructions...)
+			instructions = append(instructions, opcode.OP_END_BLOCK)
+
+			return instructions
+		} else {
+			for _, stmt := range node.Statements {
+				bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
+			}
+
+			return bodyInstructions
 		}
-		scope := c.endScope()
-
-		instructions = append(instructions, opcode.OP_BLOCK)
-		instructions = append(instructions, opcode.OpCode(len(scope)))
-		instructions = append(instructions, bodyInstructions...)
-		instructions = append(instructions, opcode.OP_END_BLOCK)
-
-		return instructions
 
 	case *ast.WhileStatement:
 		var instructions []opcode.OpCode
@@ -169,10 +177,10 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		instructions = append(instructions, condition...)
 		instructions = append(instructions, opcode.OP_JUMP_FALSE)
-		instructions = append(instructions, opcode.OpCode(len(body)+2))
+		instructions = append(instructions, opcode.OpCode(len(body)+3))
 		instructions = append(instructions, body...)
 		instructions = append(instructions, opcode.OP_JUMP)
-		instructions = append(instructions, opcode.OpCode(-len(body)-len(condition)-1))
+		instructions = append(instructions, opcode.OpCode(-len(body)-len(condition)-3))
 
 		return instructions
 
@@ -216,15 +224,23 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		return instructions
 
 	case *ast.Identifier:
-		offset, index := c.findInScope(node.Value)
-		return []opcode.OpCode{opcode.OP_GET, opcode.OpCode(index), opcode.OpCode(offset)}
+		scopeIndex, valueIndex := c.findInScope(node.Value)
+		return []opcode.OpCode{
+			opcode.OP_GET,
+			opcode.OpCode(valueIndex),
+			opcode.OpCode(scopeIndex),
+		}
 
 	case *ast.AssignExpression:
 		var instructions []opcode.OpCode
-		offset, index := c.findInScope(node.Name.TokenLiteral())
+		scopeIndex, valueIndex := c.findInScope(node.Name.TokenLiteral())
 		value := c.Compile(node.Value)
 		instructions = append(instructions, value...)
-		instructions = append(instructions, opcode.OP_SET, opcode.OpCode(index), opcode.OpCode(offset))
+		instructions = append(instructions,
+			opcode.OP_SET,
+			opcode.OpCode(valueIndex),
+			opcode.OpCode(scopeIndex),
+		)
 
 		return instructions
 
@@ -238,6 +254,17 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 	case *ast.NilLiteral:
 		return []opcode.OpCode{opcode.OP_CONST, opcode.OpCode(c.addConstant(value.NewNilValue()))}
+
+	case *ast.ArrayLiteral:
+		instructions := []opcode.OpCode{}
+
+		for i := len(node.Value) - 1; i >= 0; i-- {
+			instructions = append(instructions, c.Compile(node.Value[i])...)
+		}
+
+		instructions = append(instructions, opcode.OP_ARRAY, opcode.OpCode(len(node.Value)))
+
+		return instructions
 
 	default:
 		panic("Unimplemented Ast %d")

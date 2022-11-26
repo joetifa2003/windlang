@@ -40,10 +40,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewIntValue(leftInt + rightInt))
+				v.Stack.push(value.NewIntValue(leftNumber + rightNumber))
 			}
 
 		case opcode.OP_SUBTRACT:
@@ -52,10 +52,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewIntValue(leftInt - rightInt))
+				v.Stack.push(value.NewIntValue(leftNumber - rightNumber))
 			}
 
 		case opcode.OP_MULTIPLY:
@@ -64,10 +64,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewIntValue(leftInt * rightInt))
+				v.Stack.push(value.NewIntValue(leftNumber * rightNumber))
 			}
 
 		case opcode.OP_MODULO:
@@ -76,10 +76,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewIntValue(leftInt % rightInt))
+				v.Stack.push(value.NewIntValue(leftNumber % rightNumber))
 			}
 
 		case opcode.OP_DIVIDE:
@@ -88,10 +88,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewIntValue(leftInt / rightInt))
+				v.Stack.push(value.NewIntValue(leftNumber / rightNumber))
 			}
 
 		case opcode.OP_EQ:
@@ -100,10 +100,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewBoolValue(leftInt == rightInt))
+				v.Stack.push(value.NewBoolValue(leftNumber == rightNumber))
 			}
 
 		case opcode.OP_LESSEQ:
@@ -112,10 +112,10 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftInt := left.IntV
-				rightInt := right.IntV
+				leftNumber := left.IntV
+				rightNumber := right.IntV
 
-				v.Stack.push(value.NewBoolValue(leftInt <= rightInt))
+				v.Stack.push(value.NewBoolValue(leftNumber <= rightNumber))
 			}
 
 		case opcode.OP_JUMP_FALSE:
@@ -175,7 +175,7 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 			v.Stack.push(value)
 
 		case opcode.OP_POP:
-			if v.Stack.P != 0 {
+			if len(v.Stack.Value) != 0 {
 				v.Stack.pop()
 			}
 
@@ -183,6 +183,17 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 			operand := v.Stack.pop()
 
 			fmt.Println(operand.String())
+
+		case opcode.OP_ARRAY:
+			ip++
+			n := int(instructions[ip])
+			values := make([]value.Value, n)
+
+			for i := 0; i < n; i++ {
+				values[i] = v.Stack.pop()
+			}
+
+			v.Stack.push(value.NewArrayValue(values))
 
 		default:
 			panic("Unimplemented OpCode " + fmt.Sprint(instructions[ip]))

@@ -249,6 +249,9 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 
 	for !p.currentTokenIs(token.RBRACE) && !p.currentTokenIs(token.EOF) {
 		stmt := p.parseStatement()
+		if _, ok := stmt.(*ast.LetStatement); ok {
+			block.VarCount++
+		}
 
 		block.Statements = append(block.Statements, stmt)
 	}
