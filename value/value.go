@@ -16,17 +16,13 @@ const (
 )
 
 type Value struct {
-	VType        ValueType
-	IntV         int
-	BoolV        bool
-	FloatV       float32
-	nonPrimitive unsafe.Pointer
+	VType         ValueType
+	primitiveData [8]byte // int64, float64, bool
+	nonPrimitive  *NonPrimitiveData
 }
 
-type nonPrimitiveValue struct {
-	ArrayV  []Value
-	ObjectV map[string]Value
-	StringV string
+type NonPrimitiveData struct {
+	ArrayV []Value
 }
 
 func NewNilValue() Value {
@@ -36,36 +32,58 @@ func NewNilValue() Value {
 }
 
 func NewIntValue(v int) Value {
-	return Value{
-		VType: VALUE_INT,
-		IntV:  v,
+	value := Value{
+		VType:         VALUE_INT,
+		primitiveData: [8]byte{},
 	}
+
+	*(*int)(unsafe.Pointer(&value.primitiveData[0])) = v
+
+	return value
 }
 
 func NewBoolValue(v bool) Value {
-	return Value{
-		VType: VALUE_BOOL,
-		BoolV: v,
+	value := Value{
+		VType:         VALUE_BOOL,
+		primitiveData: [8]byte{},
 	}
+
+	*(*bool)(unsafe.Pointer(&value.primitiveData[0])) = v
+
+	return value
 }
 
 func NewArrayValue(v []Value) Value {
 	return Value{
-		VType:        VALUE_ARRAY,
-		nonPrimitive: unsafe.Pointer(&nonPrimitiveValue{ArrayV: v}),
+		VType: VALUE_ARRAY,
+		nonPrimitive: &NonPrimitiveData{
+			ArrayV: v,
+		},
 	}
 }
 
-func (v Value) GetArray() []Value {
-	return (*nonPrimitiveValue)(v.nonPrimitive).ArrayV
+func (v *Value) GetArray() []Value {
+	return v.nonPrimitive.ArrayV
 }
 
-func (v Value) String() string {
+func (v *Value) GetInt() int {
+	return *(*int)(unsafe.Pointer(&v.primitiveData[0]))
+}
+
+func (v *Value) GetIntPtr() *int {
+	return (*int)(unsafe.Pointer(&v.primitiveData[0]))
+}
+
+func (v *Value) GetBool() bool {
+	return *(*bool)(unsafe.Pointer(&v.primitiveData[0]))
+}
+
+func (v *Value) String() string {
 	switch v.VType {
 	case VALUE_INT:
-		return fmt.Sprint(v.IntV)
+		return fmt.Sprint(v.GetInt())
 	case VALUE_BOOL:
-		return fmt.Sprint(v.BoolV)
+		return fmt.Sprint(v.GetBool())
 	case VALUE_NIL:
 		return "nil"
 	case VALUE_ARRAY:

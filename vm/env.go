@@ -1,6 +1,8 @@
 package vm
 
-import "github.com/joetifa2003/windlang/value"
+import (
+	"github.com/joetifa2003/windlang/value"
+)
 
 type Environment struct {
 	Store []value.Value
@@ -53,4 +55,17 @@ func (s *EnvironmentStack) set(scopeIndex, index int, value value.Value) value.V
 	env.Store[index] = value
 
 	return env.Store[index]
+}
+
+func (s *EnvironmentStack) increment(scopeIndex, index int) (ok bool) {
+	env := &s.Value[scopeIndex]
+	val := &env.Store[index]
+	if val.VType != value.VALUE_INT {
+		return false
+	}
+
+	ptr := val.GetIntPtr()
+	*ptr++
+
+	return true
 }

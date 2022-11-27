@@ -40,8 +40,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewIntValue(leftNumber + rightNumber))
 			}
@@ -52,8 +52,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewIntValue(leftNumber - rightNumber))
 			}
@@ -64,8 +64,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewIntValue(leftNumber * rightNumber))
 			}
@@ -76,8 +76,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewIntValue(leftNumber % rightNumber))
 			}
@@ -88,8 +88,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewIntValue(leftNumber / rightNumber))
 			}
@@ -100,8 +100,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewBoolValue(leftNumber == rightNumber))
 			}
@@ -112,8 +112,8 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			switch {
 			case left.VType == value.VALUE_INT && right.VType == value.VALUE_INT:
-				leftNumber := left.IntV
-				rightNumber := right.IntV
+				leftNumber := left.GetInt()
+				rightNumber := right.GetInt()
 
 				v.Stack.push(value.NewBoolValue(leftNumber <= rightNumber))
 			}
@@ -195,6 +195,17 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 
 			v.Stack.push(value.NewArrayValue(values))
 
+		case opcode.OP_INC:
+			ip++
+			index := int(instructions[ip])
+			ip++
+			scopeIndex := int(instructions[ip])
+
+			ok := v.EnvStack.increment(scopeIndex, index)
+			if !ok {
+				panic("")
+			}
+
 		default:
 			panic("Unimplemented OpCode " + fmt.Sprint(instructions[ip]))
 		}
@@ -206,7 +217,7 @@ func (v *VM) Interpret(instructions []opcode.OpCode) {
 func isTruthy(input value.Value) bool {
 	switch input.VType {
 	case value.VALUE_BOOL:
-		return input.BoolV
+		return input.GetBool()
 	default:
 		return true
 	}
