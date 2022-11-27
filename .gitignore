@@ -4,3 +4,4 @@ test.py
 node_modules
 *.vsix
 windlang
+main.py

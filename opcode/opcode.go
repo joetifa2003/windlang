@@ -3,8 +3,7 @@ package opcode
 type OpCode int
 
 const (
-	// args: [const index]
-	OP_CONST OpCode = iota
+	OP_CONST OpCode = iota // args: [const index]
 	OP_ADD
 	OP_SUBTRACT
 	OP_MULTIPLY
@@ -20,6 +19,7 @@ const (
 	OP_END_BLOCK
 	OP_SET // args: [index, scope index]
 	OP_GET // args: [index, scope index]
+	OP_INC // args: [index, scope index]
 	OP_POP
 	OP_ECHO
 	OP_ARRAY // args: [n of elements]

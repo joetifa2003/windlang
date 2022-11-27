@@ -244,6 +244,17 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		return instructions
 
+	case *ast.PostfixExpression:
+		var instructions []opcode.OpCode
+		scopeIndex, valueIndex := c.findInScope(node.Left.TokenLiteral())
+		instructions = append(instructions,
+			opcode.OP_INC,
+			opcode.OpCode(valueIndex),
+			opcode.OpCode(scopeIndex),
+		)
+
+		return instructions
+
 	case *ast.EchoStatement:
 		var instructions []opcode.OpCode
 
