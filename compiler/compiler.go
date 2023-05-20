@@ -6,14 +6,34 @@ import (
 	"github.com/joetifa2003/windlang/value"
 )
 
+type Local struct {
+	Name         string
+	Scope        int
+	IndexInFrame int
+}
+
+type Frame struct {
+	Instructions []opcode.OpCode
+	Locals       []Local
+	scopes       [][]Local
+}
+
+func NewFrame() Frame {
+	return Frame{
+		Instructions: []opcode.OpCode{},
+		Locals:       []Local{},
+		scopes:       [][]Local{},
+	}
+}
+
 type Compiler struct {
-	Scopes    [][]string
 	Constants []value.Value
+	Frames    []Frame
 }
 
 func NewCompiler() Compiler {
 	return Compiler{
-		Scopes:    [][]string{},
+		Frames:    []Frame{NewFrame()},
 		Constants: []value.Value{},
 	}
 }
@@ -24,30 +44,39 @@ func (c *Compiler) addConstant(v value.Value) int {
 	return len(c.Constants) - 1
 }
 
-func (c *Compiler) beginScope() {
-	c.Scopes = append(c.Scopes, []string{})
+func (c *Compiler) curFrame() *Frame {
+	return &c.Frames[len(c.Frames)-1]
 }
 
-func (c *Compiler) endScope() []string {
-	lastScope := c.Scopes[len(c.Scopes)-1]
-	c.Scopes = c.Scopes[:len(c.Scopes)-1]
+func (c *Compiler) beginScope() {
+	frame := c.curFrame()
+	frame.scopes = append(frame.scopes, []Local{})
+}
 
-	return lastScope
+func (c *Compiler) endScope() {
+	frame := c.curFrame()
+	frame.scopes = frame.scopes[:len(frame.scopes)-1]
 }
 
 func (c *Compiler) addToScope(name string) int {
-	scope := &c.Scopes[len(c.Scopes)-1]
-	*scope = append(*scope, name)
+	frame := c.curFrame()
+	local := Local{Name: name, Scope: len(frame.scopes) - 1, IndexInFrame: len(frame.Locals)}
+	frame.Locals = append(frame.Locals, local)
 
-	return len(*scope) - 1
+	scope := &frame.scopes[len(frame.scopes)-1]
+	*scope = append(*scope, local)
+
+	return len(frame.Locals) - 1
 }
 
-// returns scope index and the value index inside it
-func (c *Compiler) findInScope(name string) (int, int) {
-	for scopesIndex := len(c.Scopes) - 1; scopesIndex >= 0; scopesIndex-- {
-		for valueIndex, v := range c.Scopes[scopesIndex] {
-			if v == name {
-				return scopesIndex, valueIndex
+// findInScope returns (frameOffset)
+func (c *Compiler) findInScope(name string) int {
+	frame := c.curFrame()
+
+	for scopesIndex := len(frame.scopes) - 1; scopesIndex >= 0; scopesIndex-- {
+		for _, v := range frame.scopes[scopesIndex] {
+			if v.Name == name {
+				return v.IndexInFrame
 			}
 		}
 	}
@@ -55,19 +84,16 @@ func (c *Compiler) findInScope(name string) (int, int) {
 	panic("")
 }
 
-func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
+func (c *Compiler) Compile(node ast.Node) opcode.Instructions {
 	switch node := node.(type) {
 	case *ast.Program:
 		var instructions []opcode.OpCode
 
 		c.beginScope()
 		programInstructions := append(instructions, c.CompileProgram(node.Statements)...)
-		scope := c.endScope()
+		c.endScope()
 
-		instructions = append(instructions, opcode.OP_BLOCK)
-		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, programInstructions...)
-		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
@@ -153,12 +179,9 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 			for _, stmt := range node.Statements {
 				bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
 			}
-			scope := c.endScope()
+			c.endScope()
 
-			instructions = append(instructions, opcode.OP_BLOCK)
-			instructions = append(instructions, opcode.OpCode(len(scope)))
 			instructions = append(instructions, bodyInstructions...)
-			instructions = append(instructions, opcode.OP_END_BLOCK)
 
 			return instructions
 		} else {
@@ -194,7 +217,7 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		body := c.Compile(node.Body)
 		increment := c.Compile(node.Increment)
 		increment = append(increment, opcode.OP_POP)
-		scope := c.endScope()
+		c.endScope()
 
 		bodyInstructions = append(bodyInstructions, initializer...)
 		bodyInstructions = append(bodyInstructions, condition...)
@@ -205,52 +228,47 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		bodyInstructions = append(bodyInstructions, opcode.OP_JUMP)
 		bodyInstructions = append(bodyInstructions, opcode.OpCode(-len(body)-len(increment)-len(condition)-3))
 
-		instructions = append(instructions, opcode.OP_BLOCK)
-		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, bodyInstructions...)
-		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
 	case *ast.LetStatement:
 		var instructions []opcode.OpCode
 
+		frameOffset := c.addToScope(node.Name.Value)
 		value := c.Compile(node.Value)
-		index := c.addToScope(node.Name.Value)
 		instructions = append(instructions, value...)
 		instructions = append(instructions, opcode.OP_LET)
-		instructions = append(instructions, opcode.OpCode(index))
+		instructions = append(instructions, opcode.OpCode(frameOffset))
 
 		return instructions
 
 	case *ast.Identifier:
-		scopeIndex, valueIndex := c.findInScope(node.Value)
+		frameOffset := c.findInScope(node.Value)
 		return []opcode.OpCode{
 			opcode.OP_GET,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
+			opcode.OpCode(frameOffset),
 		}
 
 	case *ast.AssignExpression:
 		var instructions []opcode.OpCode
-		scopeIndex, valueIndex := c.findInScope(node.Name.TokenLiteral())
+		frameOffset := c.findInScope(node.Name.TokenLiteral())
+
 		value := c.Compile(node.Value)
 		instructions = append(instructions, value...)
 		instructions = append(instructions,
 			opcode.OP_SET,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
+			opcode.OpCode(frameOffset),
 		)
 
 		return instructions
 
 	case *ast.PostfixExpression:
 		var instructions []opcode.OpCode
-		scopeIndex, valueIndex := c.findInScope(node.Left.TokenLiteral())
+		frameOffset := c.findInScope(node.Left.TokenLiteral())
 		instructions = append(instructions,
 			opcode.OP_INC,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
+			opcode.OpCode(frameOffset),
 		)
 
 		return instructions

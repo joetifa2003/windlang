@@ -3,16 +3,19 @@ package value
 import (
 	"fmt"
 	"unsafe"
+
+	"github.com/joetifa2003/windlang/opcode"
 )
 
 type ValueType int
 
 const (
-	VALUE_INT ValueType = iota
+	VALUE_NIL ValueType = iota
+	VALUE_INT
 	VALUE_BOOL
-	VALUE_NIL
 	VALUE_ARRAY
 	VALUE_OBJECT
+	VALUE_FN
 )
 
 type Value struct {
@@ -23,6 +26,12 @@ type Value struct {
 
 type NonPrimitiveData struct {
 	ArrayV []Value
+	FnV    FnValue
+}
+
+type FnValue struct {
+	Instructions []opcode.OpCode
+	VarCount     int
 }
 
 func NewNilValue() Value {
@@ -62,8 +71,24 @@ func NewArrayValue(v []Value) Value {
 	}
 }
 
+func NewFnValue(instructions []opcode.OpCode, varCount int) Value {
+	return Value{
+		VType: VALUE_FN,
+		nonPrimitive: &NonPrimitiveData{
+			FnV: FnValue{
+				Instructions: instructions,
+				VarCount:     varCount,
+			},
+		},
+	}
+}
+
 func (v *Value) GetArray() []Value {
 	return v.nonPrimitive.ArrayV
+}
+
+func (v *Value) GetFn() FnValue {
+	return v.nonPrimitive.FnV
 }
 
 func (v *Value) GetInt() int {

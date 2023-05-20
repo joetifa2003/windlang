@@ -45,13 +45,25 @@ func (s *EnvironmentStack) let(index int, val value.Value) {
 }
 
 func (s *EnvironmentStack) get(scopeIndex, index int) value.Value {
-	env := &s.Value[scopeIndex]
+	env := &s.Value[s.p-scopeIndex-1]
 
 	return env.Store[index]
 }
 
+func (s *EnvironmentStack) getGlobal(index int) value.Value {
+	env := &s.Value[0]
+
+	return env.Store[index]
+}
+
+func (s *EnvironmentStack) setGlobal(index int, val value.Value) {
+	env := &s.Value[0]
+
+	env.Store[index] = val
+}
+
 func (s *EnvironmentStack) set(scopeIndex, index int, value value.Value) value.Value {
-	env := &s.Value[scopeIndex]
+	env := &s.Value[s.p-scopeIndex-1]
 	env.Store[index] = value
 
 	return env.Store[index]
