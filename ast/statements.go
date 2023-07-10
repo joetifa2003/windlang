@@ -145,3 +145,14 @@ type EchoStatement struct {
 
 func (es *EchoStatement) TokenLiteral() string { return es.Token.Literal }
 func (es *EchoStatement) String() string       { return "" }
+
+type IfStatement struct {
+	Statement
+
+	Token      token.Token // The 'if' token
+	Condition  Expression
+	ThenBranch Statement
+	ElseBranch Statement
+}
+
+func (ie *IfStatement) TokenLiteral() string { return ie.Token.Literal }

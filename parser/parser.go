@@ -77,7 +77,7 @@ func (p *Parser) getPrecedence(tokenType token.TokenType) int {
 		return EQUALS
 	case token.ASSIGN:
 		return ASSIGN
-	case token.LT, token.GT:
+	case token.LT, token.GT, token.LT_EQ:
 		return LessGreater
 	case token.PLUS, token.MINUS:
 		return SUM
@@ -110,8 +110,6 @@ func (p *Parser) getPrefixParseFn(tokenType token.TokenType) prefixParseFn {
 		return p.parseBoolean
 	case token.LPAREN:
 		return p.parseGroupedExpression
-	case token.IF:
-		return p.parseIfExpression
 	case token.FUNCTION:
 		return p.parseFunctionLiteral
 	case token.STRING:
@@ -165,10 +163,12 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIncludeStatement()
 	case token.WHILE:
 		return p.parseWhileStatement()
-	// case token.BREAK:
-	// 	return p.parseBreakStatement()
-	// case token.CONTINUE:
-	// 	return p.parseContinueStatement()
+		// case token.BREAK:
+		// 	return p.parseBreakStatement()
+		// case token.CONTINUE:
+		// 	return p.parseContinueStatement()
+	case token.IF:
+		return p.parseIfStatement()
 	case token.ECHO:
 		return p.parseEchoStatement()
 	default:
@@ -331,7 +331,9 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 	leftExp := prefix()
 
-	for !p.currentTokenIs(token.SEMICOLON) && p.curPrecedence() >= precedence {
+	// if the current precedence is higher, then we take the left expression
+	// and do the higer level of percendence first
+	for !p.currentTokenIs(token.SEMICOLON) && p.curPrecedence() > precedence {
 		infix := p.getInfixParseFn(p.curToken.Type)
 		if infix == nil {
 			return leftExp
@@ -446,29 +448,28 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return exp
 }
 
-func (p *Parser) parseIfExpression() ast.Expression {
-	expression := ast.IfExpression{Token: p.curToken}
+func (p *Parser) parseIfStatement() ast.Statement {
+	stmt := ast.IfStatement{Token: p.curToken}
 
 	p.nextToken()
 
 	p.expectCurrent(token.LPAREN)
 
-	expression.Condition = p.parseExpression(LOWEST)
+	stmt.Condition = p.parseExpression(LOWEST)
 
 	p.expectCurrent(token.RPAREN)
 
 	thenStatement := p.parseStatement()
-	expression.ThenBranch = thenStatement
+	stmt.ThenBranch = thenStatement
 
 	if p.currentTokenIs(token.ELSE) {
 		p.nextToken()
 
 		elseStatement := p.parseStatement()
-		expression.ElseBranch = elseStatement
+		stmt.ElseBranch = elseStatement
 	}
 
-	return &expression
-
+	return &stmt
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {

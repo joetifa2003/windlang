@@ -68,17 +68,6 @@ type InfixExpression struct {
 
 func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
 
-type IfExpression struct {
-	Expression
-
-	Token      token.Token // The 'if' token
-	Condition  Expression
-	ThenBranch Statement
-	ElseBranch Statement
-}
-
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
-
 type FunctionLiteral struct {
 	Expression
 
