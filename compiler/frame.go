@@ -41,7 +41,7 @@ func NewFrame(parent *Frame) Frame {
 		Locals:       []Var{},
 		FreeVars:     []Var{},
 		blocks: [][]Var{
-			[]Var{},
+			{},
 		},
 	}
 }
