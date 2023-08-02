@@ -35,6 +35,7 @@ var vmCommand = &cobra.Command{
 			return
 		}
 
+		// defer profile.Start().Stop()
 		input := string(file)
 		lexer := lexer.New(input)
 		parser := parser.New(lexer, filePath)
@@ -56,10 +57,9 @@ var vmCommand = &cobra.Command{
 		}
 
 		mainFrame := compiler.Frames[0]
-		mainFrame.Instructions = instructions
 		virtualM := vm.NewVM(compiler.Constants,
 			vm.Frame{
-				Instructions: mainFrame.Instructions,
+				Instructions: instructions,
 				NumOfLocals:  len(mainFrame.Locals),
 			},
 		)

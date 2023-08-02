@@ -9,8 +9,9 @@ import (
 
 type Frame struct {
 	Instructions []opcode.OpCode
-	ip           int
 	NumOfLocals  int
+
+	ip int
 }
 
 type VM struct {
@@ -31,6 +32,14 @@ func NewVM(constants []value.Value, mainFrame Frame) VM {
 
 func (v *VM) curFrame() *Frame {
 	return &v.Frames[len(v.Frames)-1]
+}
+
+func (v *VM) pushFrame(f Frame) {
+	v.Frames = append(v.Frames, f)
+}
+
+func (v *VM) popFrame() {
+	v.Frames = v.Frames[:len(v.Frames)-1]
 }
 
 // initCurFrame initializes the stack to hold local variables
@@ -162,11 +171,16 @@ func (v *VM) Interpret() {
 			v.Stack.Value[offset] = value
 
 		case opcode.OP_SET:
-			panic("Unimplemented")
+			value := v.Stack.peek()
+			*ip++
+			offset := int(instructions[*ip])
+			v.Stack.Value[offset] = value
+
 		case opcode.OP_GET:
 			*ip++
 			offset := int(instructions[*ip])
 			v.Stack.push(v.Stack.Value[offset])
+
 		case opcode.OP_GET_GLOBAL:
 			panic("Unimplemented")
 
@@ -174,9 +188,7 @@ func (v *VM) Interpret() {
 			panic("Unimplemented")
 
 		case opcode.OP_POP:
-			if len(v.Stack.Value) != 0 {
-				v.Stack.pop()
-			}
+			v.Stack.pop()
 
 		case opcode.OP_ECHO:
 			operand := v.Stack.pop()
@@ -201,9 +213,12 @@ func (v *VM) Interpret() {
 			// scopeIndex := int(instructions[ip])
 
 		case opcode.OP_CALL:
-
-		case opcode.OP_RET:
-			return
+			f := v.Stack.pop()
+			if f.VType == value.VALUE_FN {
+				fn := f.GetFn()
+				v.pushFrame(Frame{Instructions: fn.Instructions, NumOfLocals: fn.VarCount})
+			}
+			continue
 
 		default:
 			panic("Unimplemented OpCode " + fmt.Sprint(instructions[*ip]))

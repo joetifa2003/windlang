@@ -76,6 +76,20 @@ func (instructions Instructions) String() string {
 			ip++
 			frameOffset := int(instructions[ip])
 			out.WriteString(fmt.Sprintf("get %d", frameOffset))
+		case OP_JUMP:
+			ip++
+			offset := int(instructions[ip])
+			out.WriteString(fmt.Sprintf("jmp %d", offset))
+		case OP_JUMP_FALSE:
+			ip++
+			offset := int(instructions[ip])
+			out.WriteString(fmt.Sprintf("jmpf %d", offset))
+		case OP_SET:
+			ip++
+			frameOffset := int(instructions[ip])
+			out.WriteString(fmt.Sprintf("set %d", frameOffset))
+		case OP_CALL:
+			out.WriteString("call")
 
 		default:
 			panic(fmt.Sprintf("Unimplemented opcode %d", op))
