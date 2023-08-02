@@ -56,14 +56,6 @@ type PrefixExpression struct {
 }
 
 func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
-func (pe *PrefixExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(pe.Operator)
-	out.WriteString(pe.Right.String())
-	out.WriteString(")")
-	return out.String()
-}
 
 type InfixExpression struct {
 	Expression
@@ -75,40 +67,6 @@ type InfixExpression struct {
 }
 
 func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
-func (oe *InfixExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(oe.Left.String())
-	out.WriteString(" " + oe.Operator + " ")
-	out.WriteString(oe.Right.String())
-	out.WriteString(")")
-	return out.String()
-}
-
-type IfExpression struct {
-	Expression
-
-	Token      token.Token // The 'if' token
-	Condition  Expression
-	ThenBranch Statement
-	ElseBranch Statement
-}
-
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
-func (ie *IfExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("if")
-	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ie.ThenBranch.String())
-
-	if ie.ElseBranch != nil {
-		out.WriteString("else ")
-		out.WriteString(ie.ElseBranch.String())
-	}
-
-	return out.String()
-}
 
 type FunctionLiteral struct {
 	Expression
@@ -120,20 +78,7 @@ type FunctionLiteral struct {
 
 func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FunctionLiteral) String() string {
-	var out bytes.Buffer
-
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString(fl.TokenLiteral())
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	out.WriteString(fl.Body.String())
-
-	return out.String()
+	return "fn"
 }
 
 type CallExpression struct {

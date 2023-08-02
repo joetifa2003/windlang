@@ -18,17 +18,6 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
-func (p *Program) String() string {
-	var out bytes.Buffer
-
-	for _, s := range p.Statements {
-		out.WriteString(s.String())
-		out.WriteString("\n")
-	}
-
-	return out.String()
-}
-
 type LetStatement struct {
 	Statement
 
@@ -99,15 +88,6 @@ type BlockStatement struct {
 }
 
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
-func (bs *BlockStatement) String() string {
-	var out bytes.Buffer
-
-	for _, s := range bs.Statements {
-		out.WriteString(s.String())
-	}
-
-	return out.String()
-}
 
 type ForStatement struct {
 	Statement
@@ -165,3 +145,14 @@ type EchoStatement struct {
 
 func (es *EchoStatement) TokenLiteral() string { return es.Token.Literal }
 func (es *EchoStatement) String() string       { return "" }
+
+type IfStatement struct {
+	Statement
+
+	Token      token.Token // The 'if' token
+	Condition  Expression
+	ThenBranch Statement
+	ElseBranch Statement
+}
+
+func (ie *IfStatement) TokenLiteral() string { return ie.Token.Literal }

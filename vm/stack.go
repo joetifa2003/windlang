@@ -23,3 +23,11 @@ func (s *Stack) pop() value.Value {
 func (s *Stack) push(value value.Value) {
 	s.Value = append(s.Value, value)
 }
+
+func (s *Stack) update(value value.Value) {
+	s.Value[len(s.Value)-1] = value
+}
+
+func (s *Stack) peek() value.Value {
+	return s.Value[len(s.Value)-1]
+}

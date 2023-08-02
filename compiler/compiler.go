@@ -1,19 +1,21 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/joetifa2003/windlang/ast"
 	"github.com/joetifa2003/windlang/opcode"
 	"github.com/joetifa2003/windlang/value"
 )
 
 type Compiler struct {
-	Scopes    [][]string
 	Constants []value.Value
+	Frames    []Frame
 }
 
 func NewCompiler() Compiler {
 	return Compiler{
-		Scopes:    [][]string{},
+		Frames:    []Frame{NewFrame(nil)},
 		Constants: []value.Value{},
 	}
 }
@@ -24,52 +26,39 @@ func (c *Compiler) addConstant(v value.Value) int {
 	return len(c.Constants) - 1
 }
 
-func (c *Compiler) beginScope() {
-	c.Scopes = append(c.Scopes, []string{})
+func (c *Compiler) pushFrame() {
+	c.Frames = append(c.Frames, NewFrame(c.curFrame()))
 }
 
-func (c *Compiler) endScope() []string {
-	lastScope := c.Scopes[len(c.Scopes)-1]
-	c.Scopes = c.Scopes[:len(c.Scopes)-1]
-
-	return lastScope
+func (c *Compiler) popFrame() {
+	c.Frames = c.Frames[:len(c.Frames)-1]
 }
 
-func (c *Compiler) addToScope(name string) int {
-	scope := &c.Scopes[len(c.Scopes)-1]
-	*scope = append(*scope, name)
-
-	return len(*scope) - 1
+func (c *Compiler) curFrame() *Frame {
+	return &c.Frames[len(c.Frames)-1]
 }
 
-// returns scope index and the value index inside it
-func (c *Compiler) findInScope(name string) (int, int) {
-	for scopesIndex := len(c.Scopes) - 1; scopesIndex >= 0; scopesIndex-- {
-		for valueIndex, v := range c.Scopes[scopesIndex] {
-			if v == name {
-				return scopesIndex, valueIndex
-			}
-		}
-	}
-
-	panic("")
+func (c *Compiler) beginBlock() {
+	c.curFrame().beginBlock()
 }
 
-func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
+func (c *Compiler) endBlock() {
+	c.curFrame().endBlock()
+}
+
+func (c *Compiler) define(name string) int {
+	return c.curFrame().define(name)
+}
+
+// resolve returns (frameOffset)
+func (c *Compiler) resolve(name string) Var {
+	return c.curFrame().resolve(name)
+}
+
+func (c *Compiler) Compile(node ast.Node) opcode.Instructions {
 	switch node := node.(type) {
 	case *ast.Program:
-		var instructions []opcode.OpCode
-
-		c.beginScope()
-		programInstructions := append(instructions, c.CompileProgram(node.Statements)...)
-		scope := c.endScope()
-
-		instructions = append(instructions, opcode.OP_BLOCK)
-		instructions = append(instructions, opcode.OpCode(len(scope)))
-		instructions = append(instructions, programInstructions...)
-		instructions = append(instructions, opcode.OP_END_BLOCK)
-
-		return instructions
+		return c.CompileProgram(node.Statements)
 
 	case *ast.ExpressionStatement:
 		expr := c.Compile(node.Expression)
@@ -108,7 +97,7 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		return instructions
 
-	case *ast.IfExpression:
+	case *ast.IfStatement:
 		var instructions []opcode.OpCode
 
 		condition := c.Compile(node.Condition)
@@ -146,28 +135,14 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 	case *ast.BlockStatement:
 		var instructions []opcode.OpCode
-		var bodyInstructions []opcode.OpCode
 
-		if node.VarCount != 0 {
-			c.beginScope()
-			for _, stmt := range node.Statements {
-				bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
-			}
-			scope := c.endScope()
-
-			instructions = append(instructions, opcode.OP_BLOCK)
-			instructions = append(instructions, opcode.OpCode(len(scope)))
-			instructions = append(instructions, bodyInstructions...)
-			instructions = append(instructions, opcode.OP_END_BLOCK)
-
-			return instructions
-		} else {
-			for _, stmt := range node.Statements {
-				bodyInstructions = append(bodyInstructions, c.Compile(stmt)...)
-			}
-
-			return bodyInstructions
+		c.beginBlock()
+		for _, stmt := range node.Statements {
+			instructions = append(instructions, c.Compile(stmt)...)
 		}
+		c.endBlock()
+
+		return instructions
 
 	case *ast.WhileStatement:
 		var instructions []opcode.OpCode
@@ -188,13 +163,13 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		var bodyInstructions []opcode.OpCode
 		var instructions []opcode.OpCode
 
-		c.beginScope()
+		c.beginBlock()
 		initializer := c.Compile(node.Initializer)
 		condition := c.Compile(node.Condition)
 		body := c.Compile(node.Body)
 		increment := c.Compile(node.Increment)
 		increment = append(increment, opcode.OP_POP)
-		scope := c.endScope()
+		c.endBlock()
 
 		bodyInstructions = append(bodyInstructions, initializer...)
 		bodyInstructions = append(bodyInstructions, condition...)
@@ -205,55 +180,44 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 		bodyInstructions = append(bodyInstructions, opcode.OP_JUMP)
 		bodyInstructions = append(bodyInstructions, opcode.OpCode(-len(body)-len(increment)-len(condition)-3))
 
-		instructions = append(instructions, opcode.OP_BLOCK)
-		instructions = append(instructions, opcode.OpCode(len(scope)))
 		instructions = append(instructions, bodyInstructions...)
-		instructions = append(instructions, opcode.OP_END_BLOCK)
 
 		return instructions
 
 	case *ast.LetStatement:
 		var instructions []opcode.OpCode
 
+		frameOffset := c.define(node.Name.Value)
 		value := c.Compile(node.Value)
-		index := c.addToScope(node.Name.Value)
 		instructions = append(instructions, value...)
 		instructions = append(instructions, opcode.OP_LET)
-		instructions = append(instructions, opcode.OpCode(index))
+		instructions = append(instructions, opcode.OpCode(frameOffset))
 
 		return instructions
 
 	case *ast.Identifier:
-		scopeIndex, valueIndex := c.findInScope(node.Value)
-		return []opcode.OpCode{
-			opcode.OP_GET,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
-		}
+		variable := c.resolve(node.Value)
+		return variable.Get()
 
 	case *ast.AssignExpression:
 		var instructions []opcode.OpCode
-		scopeIndex, valueIndex := c.findInScope(node.Name.TokenLiteral())
+		variable := c.resolve(node.Name.TokenLiteral())
+
 		value := c.Compile(node.Value)
 		instructions = append(instructions, value...)
-		instructions = append(instructions,
-			opcode.OP_SET,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
-		)
+		instructions = append(instructions, variable.Set()...)
 
 		return instructions
 
-	case *ast.PostfixExpression:
-		var instructions []opcode.OpCode
-		scopeIndex, valueIndex := c.findInScope(node.Left.TokenLiteral())
-		instructions = append(instructions,
-			opcode.OP_INC,
-			opcode.OpCode(valueIndex),
-			opcode.OpCode(scopeIndex),
-		)
-
-		return instructions
+	// case *ast.PostfixExpression:
+	// 	var instructions []opcode.OpCode
+	// 	frameOffset := c.resolve(node.Left.TokenLiteral())
+	// 	instructions = append(instructions,
+	// 		opcode.OP_INC,
+	// 		opcode.OpCode(frameOffset),
+	// 	)
+	//
+	// 	return instructions
 
 	case *ast.EchoStatement:
 		var instructions []opcode.OpCode
@@ -277,8 +241,35 @@ func (c *Compiler) Compile(node ast.Node) []opcode.OpCode {
 
 		return instructions
 
+	case *ast.FunctionLiteral:
+		c.pushFrame()
+
+		for _, param := range node.Parameters {
+			c.define(param.Value)
+		}
+
+		bodyInstructions := c.Compile(node.Body)
+		instructions := []opcode.OpCode{
+			opcode.OP_CONST,
+			opcode.OpCode(
+				c.addConstant(
+					value.NewFnValue(bodyInstructions, len(c.curFrame().Locals)),
+				),
+			),
+		}
+
+		c.popFrame()
+
+		return instructions
+
+	case *ast.CallExpression:
+		instructions := c.Compile(node.Function)
+		instructions = append(instructions, opcode.OP_CALL)
+
+		return instructions
+
 	default:
-		panic("Unimplemented Ast %d")
+		panic(fmt.Sprintf("Unimplemented Ast %T", node))
 	}
 }
 
